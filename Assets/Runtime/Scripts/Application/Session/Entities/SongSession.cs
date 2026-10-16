@@ -597,6 +597,13 @@ namespace Strands.Applications.Session
             Replan();
         }
 
+        /// <summary>Starts the Export page's choices from those the last song was left with.</summary>
+        public void ApplyExportDefaults(ExportDefaults defaults)
+        {
+            defaults.ApplyTo(Options, Stems == null ? null : Stems.Layers);
+            Replan();
+        }
+
         /// <summary>Sets the velocity of every pad of some layers, over whatever their pads were set to one at a time.</summary>
         public void SetVelocityOfLayers(IEnumerable<int> layers, bool on)
         {

@@ -33,7 +33,21 @@ namespace Strands.Applications.Core
         public event Action ProjectNameChanged;
 
         // Settings kept from one run of the app to the next (the user, 2026-10-14).
-        const string AllOnMasterKey = "Strands.AllOnMaster", ClickKey = "Strands.Click";
+        const string AllOnMasterKey = "Strands.AllOnMaster", ClickKey = "Strands.Click", ExportKey = "Strands.Export";
+
+        /// <summary>The Export page's choices as they were last left, which each new song starts from.</summary>
+        public ExportDefaults ExportDefaults { get; private set; }
+
+        /// <summary>Keeps a song's Export page choices for the next song, and for the next run.</summary>
+        public void RememberExport(SongSession session)
+        {
+            ExportDefaults.TakeFrom(session.Options, session.Stems == null ? null : session.Stems.Layers);
+            string text = ExportDefaults.ToText();
+            if (PlayerPrefs.GetString(ExportKey, "") == text)
+                return;
+            PlayerPrefs.SetString(ExportKey, text);
+            PlayerPrefs.Save();
+        }
 
         /// <summary>Whether the click is on in the audition. It starts on.</summary>
         public bool ClickOn
@@ -59,6 +73,7 @@ namespace Strands.Applications.Core
             ProjectName = "";
             // Someone with only the master output connected sets it once.
             Strips.AllOnMaster = PlayerPrefs.GetInt(AllOnMasterKey, 0) == 1;
+            ExportDefaults = ExportDefaults.FromText(PlayerPrefs.GetString(ExportKey, ""));
             Application.targetFrameRate = frameRate;
             Application.runInBackground = true;
             SizeWindowOnFirstRun();

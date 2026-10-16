@@ -141,6 +141,8 @@ namespace Strands.UI.Export
         // Anything changed after a package was written is not in it, so the page stops saying where it is.
         void OnSessionChanged()
         {
+            // What the page is left set to is where the next song starts.
+            app.RememberExport(session);
             writtenPath = null;
             Refresh();
             // A change of a pad's settings leaves what is sounding sounding, with what the pad now

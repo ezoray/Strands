@@ -384,6 +384,7 @@ namespace Strands.UI.Source
                         analysed.Session.ApplyGridChoice(analysed.Choice);
                     else
                         analysed.Session.ApplyAnalysis(analysed.Grid, false);
+                    analysed.Session.ApplyExportDefaults(app.ExportDefaults);
                     app.Session = analysed.Session;
                     jobs.SetIdleMessage("Ready");
                     ShowAlignIfItFits(analysed.Session);
