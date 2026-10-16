@@ -1362,10 +1362,14 @@
     margin-bottom: 0;
 }
 
+/* A name, then three columns of switches, which have to fit the panel's 394 across: wider, and the
+   cells were squeezed while their switches were not, so the switches overlapped and the headings
+   sat left of them (found 2026-10-16). */
 .stemrow__name {
     flex-direction: row;
     align-items: center;
-    width: 96px;
+    width: 80px;
+    flex-shrink: 0;
 }
 
 .stemrow__name > .dot {
@@ -1373,21 +1377,34 @@
 }
 
 .stemrow__cell {
-    width: 120px;
-    margin-right: 12px;
+    width: 96px;
+    margin-right: 8px;
+    flex-shrink: 0;
 }
 
 .stemrow__cell > .seg {
-    width: 120px;
+    width: 96px;
 }
 
+/* Each heading over the middle of its column of switches */
 .stemrow--head .caption {
     margin-bottom: 0;
+    -unity-text-align: middle-center;
 }
 
 /* Every group of Options is 16 below the one above it (the user, 2026-10-16) */
 .group--export {
     margin: 16px 0 0 0;
+}
+
+/* Its caption over the middle of its switch, as the rows' headings are: the group is only as
+   wide as what is in it, so that the middle is the switch's */
+.group--export {
+    align-self: flex-start;
+}
+
+.group--export > .caption {
+    -unity-text-align: middle-center;
 }
 
 .export__choice > .seg {
