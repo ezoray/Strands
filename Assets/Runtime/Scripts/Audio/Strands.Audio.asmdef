@@ -1,0 +1,17 @@
+{
+    "name": "Strands.Audio",
+    "rootNamespace": "Strands.Audio",
+    "references": [
+        "NLayer",
+        "SharpJaad"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strands User Guide</title>
+<!--
+  The source of the user guide. It links the screenshots in docs/images and the app's own fonts, so it can be
+  opened and edited as it is. make_guide.py packs it into one file for a release, with everything inside it.
+-->
+<style>
+  @font-face { font-family: "Bricolage"; font-weight: 400; src: url("../../Assets/Runtime/UI/Fonts/BricolageGrotesque-Regular.ttf"); }
+  @font-face { font-family: "Bricolage"; font-weight: 600; src: url("../../Assets/Runtime/UI/Fonts/BricolageGrotesque-SemiBold.ttf"); }
+  @font-face { font-family: "Bricolage"; font-weight: 700; src: url("../../Assets/Runtime/UI/Fonts/BricolageGrotesque-Bold.ttf"); }
+  @font-face { font-family: "DM Mono"; font-weight: 400; src: url("../../Assets/Runtime/UI/Fonts/DMMono-Regular.ttf"); }
+
+  /* The app's own colours, from Main.uss. */
+  :root {
+    --ink: #0d1022;
+    --surface: #151933;
+    --raised: #1f2547;
+    --selected: #2c3566;
+    --well: #090b19;
+    --line: #262d52;
+    --edge: #323a66;
+    --text: #edefff;
+    --soft: #c3c8ea;
+    --quiet: #9aa1c9;
+    --faint: #626a96;
+    --paper: #f4f1e8;
+    --note: #ffd699;
+    --bad: #ffb0ba;
+    --coral: #ff7d5c;
+    --saffron: #ffd04a;
+    --mint: #3fdcb6;
+    --periwinkle: #8aa9ff;
+    --band-low: #6a5cff;
+    --band-mid: #e85fd0;
+    --sans: "Bricolage", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: "DM Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--ink);
+    /* The app's ground: the four strand colours, very faint, behind everything. */
+    background-image: linear-gradient(90deg, rgba(255,125,92,0.07), rgba(255,208,74,0.05) 35%, rgba(63,220,182,0.05) 65%, rgba(138,169,255,0.07));
+    background-attachment: fixed;
+    color: var(--soft);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 32px 64px;
+  }
+
+  /* Title */
+  .doc-title {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 18px;
+  }
+  .doc-title img { width: 84px; height: 84px; flex-shrink: 0; }
+  .doc-title h1 {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .doc-title .subtitle { color: var(--quiet); font-size: 17px; margin-top: 4px; }
+  .doc-title .version { font-family: var(--mono); color: var(--faint); font-size: 13px; }
+
+  /* Four thin lines in the strand colours, as under the app's top bar. */
+  .strands {
+    height: 8px;
+    margin: 0 0 32px;
+    background:
+      linear-gradient(var(--coral), var(--coral)) 0 0 / 100% 1px no-repeat,
+      linear-gradient(var(--saffron), var(--saffron)) 0 2px / 100% 1px no-repeat,
+      linear-gradient(var(--mint), var(--mint)) 0 4px / 100% 1px no-repeat,
+      linear-gradient(var(--periwinkle), var(--periwinkle)) 0 6px / 100% 1px no-repeat;
+  }
+
+  .intro { font-size: 18px; color: var(--text); margin-bottom: 16px; }
+
+  /* Contents */
+  .contents {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+    margin: 28px 0 8px;
+  }
+  .contents a {
+    display: block;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--c, var(--edge));
+    border-radius: 10px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .contents a span { display: block; color: var(--quiet); font-weight: 400; font-size: 14px; margin-top: 2px; }
+  .contents a:hover { background: var(--raised); }
+
+  /* Headings */
+  h2 {
+    color: var(--text);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 64px 0 16px;
+    padding-left: 16px;
+    border-left: 5px solid var(--c, var(--edge));
+    line-height: 1.2;
+    scroll-margin-top: 16px;
+  }
+  h2 .step {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--c, var(--quiet));
+    display: block;
+    letter-spacing: 0;
+    margin-bottom: 2px;
+  }
+  h3 {
+    color: var(--text);
+    font-size: 19px;
+    font-weight: 600;
+    margin: 32px 0 8px;
+    scroll-margin-top: 16px;
+  }
+  h4 { color: var(--text); font-size: 16px; font-weight: 600; margin: 20px 0 4px; }
+
+  p { margin-bottom: 12px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: normal; }
+  a { color: var(--periwinkle); }
+
+  ul, ol { margin: 8px 0 14px 24px; }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--faint); }
+
+  /* The name of a button or a choice in the app, as it reads there. */
+  .ui {
+    font-weight: 600;
+    color: var(--text);
+    background: var(--raised);
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    padding: 0 6px;
+    white-space: nowrap;
+    font-size: 0.94em;
+  }
+
+  kbd {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    color: var(--text);
+    background: var(--raised);
+    border: 1px solid var(--edge);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  code { font-family: var(--mono); font-size: 0.9em; color: var(--text); }
+
+  /* Strand-coloured words */
+  .c1 { color: var(--coral); } .c2 { color: var(--saffron); } .c3 { color: var(--mint); } .c4 { color: var(--periwinkle); }
+
+  /* Quick start steps */
+  .quick { list-style: none; margin: 16px 0 0; counter-reset: q; }
+  .quick li {
+    counter-increment: q;
+    position: relative;
+    padding: 12px 16px 12px 58px;
+    margin-bottom: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+  .quick li::before {
+    content: counter(q);
+    position: absolute;
+    left: 14px; top: 11px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--c, var(--paper));
+    color: var(--ink);
+    font-family: var(--mono);
+    font-weight: 400;
+    text-align: center;
+    line-height: 30px;
+  }
+
+  /* Boxes */
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--c, var(--edge));
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0 20px;
+  }
+  .box > :last-child { margin-bottom: 0; }
+  .box .label {
+    display: block;
+    font-weight: 700;
+    color: var(--c, var(--text));
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+  .tip { --c: var(--mint); }
+  .note { --c: var(--saffron); }
+  .warn { --c: var(--bad); }
+
+  /* Screenshots with numbered pins. A pin is placed in the picture's own pixels (1818 x 1042). */
+  figure { margin: 20px 0 24px; }
+  .shot {
+    position: relative;
+    border-radius: 10px;
+    border: 1px solid var(--edge);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  }
+  .shot img { display: block; width: 100%; height: auto; border-radius: 10px; }
+  .pin {
+    position: absolute;
+    left: calc(var(--x) * 100% / 1818);
+    top: calc(var(--y) * 100% / 1042);
+    transform: translate(-50%, -50%);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    text-decoration: none;
+  }
+  figcaption { color: var(--quiet); font-size: 14px; margin-top: 10px; text-align: center; }
+
+  .legend { list-style: none; margin: 8px 0 20px; padding: 0; }
+  .legend li { position: relative; padding-left: 40px; margin-bottom: 10px; scroll-margin-bottom: 24px; border-radius: 8px; transition: background-color 0.4s; }
+  /* The item a pin was clicked for, lit for a moment. */
+  .legend li.lit { background-color: var(--selected); }
+  .legend li .n {
+    position: absolute; left: 0; top: 1px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--paper); color: var(--ink);
+    font-family: var(--mono); font-size: 13px; line-height: 26px; text-align: center;
+  }
+
+  /* Diagrams */
+  .diagram {
+    background: var(--well);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0 24px;
+  }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .diagram svg text { font-family: var(--sans); }
+  .diagram svg .mono { font-family: var(--mono); }
+
+  /* Two columns that become one on a phone */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .cols > div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+  .cols h4 { margin-top: 0; }
+  .cols > div > :last-child { margin-bottom: 0; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 12px 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    color: var(--text);
+    font-weight: 600;
+    background: var(--raised);
+    border-bottom: 1px solid var(--edge);
+  }
+  thead th:first-child { border-top-left-radius: 8px; }
+  thead th:last-child { border-top-right-radius: 8px; }
+  tbody td { padding: 9px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tbody tr:nth-child(odd) td { background: rgba(21, 25, 51, 0.7); }
+  tbody tr:nth-child(even) td { background: rgba(31, 37, 71, 0.45); }
+  td:first-child { white-space: nowrap; color: var(--text); }
+  table.fix td:first-child { white-space: normal; width: 42%; }
+  /* The shortcut tables share one first column, so their actions line up from table to table. */
+  table.keys { table-layout: fixed; }
+  table.keys th:first-child, table.keys td:first-child { width: 36%; white-space: normal; }
+
+  .back { font-size: 14px; margin-top: 8px; }
+  .back a { color: var(--quiet); text-decoration: none; }
+  .back a:hover { color: var(--text); }
+
+  .page-footer {
+    text-align: center;
+    color: var(--faint);
+    font-size: 13px;
+    margin-top: 64px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 680px) {
+    .page { padding: 28px 16px 48px; }
+    .doc-title { gap: 14px; }
+    .doc-title img { width: 60px; height: 60px; }
+    .doc-title h1 { font-size: 30px; }
+    h2 { font-size: 24px; }
+    .cols { grid-template-columns: 1fr; }
+    .pin { width: 20px; height: 20px; font-size: 11px; line-height: 17px; border-width: 1px; }
+    .diagram { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc-title" id="top">
+  <img src="../../Assets/Runtime/Graphics/AppIcon.png" alt="">
+  <div>
+    <h1>Strands User Guide</h1>
+    <p class="subtitle">Turn a song into a project for the Pioneer DJ Toraiz SP-16 and DJS-1000</p>
+    <p class="version">Version 1.0</p>
+  </div>
+</header>
+<div class="strands"></div>
+
+<p class="intro">Strands takes a song, or the song split into stems, and makes a project your SP-16 or DJS-1000 can play from start to finish. It finds the beat, cuts the song into short pieces that line up with the bars, lays them out on the pads, and saves everything as one package file you copy to the unit.</p>
+
+<p>With stems, each part of the song, such as the drums, bass, other instruments and vocals, can come out of its own pair of outputs on the unit. Plug those outputs into separate channels on your mixer, and you can EQ, filter and fade each part of the track on its own.</p>
+
+<p>You don't need to know anything about audio files or the SP-16's project format to use it. This guide walks through the three screens of the app in the order you use them.</p>
+
+<nav class="contents">
+  <a href="#overview" style="--c: var(--paper)">How it works<span>The idea in one picture</span></a>
+  <a href="#words" style="--c: var(--paper)">Key terms<span>Stems, patterns, scenes, pads</span></a>
+  <a href="#start" style="--c: var(--paper)">Getting started<span>Installing and a quick run-through</span></a>
+  <a href="#source" style="--c: var(--coral)">1 · Source<span>Adding your song or stems</span></a>
+  <a href="#analysis" style="--c: var(--saffron)">2 · Analysis<span>Checking and fixing the beat</span></a>
+  <a href="#export" style="--c: var(--mint)">3 · Export<span>Pads, options and saving</span></a>
+  <a href="#unit" style="--c: var(--periwinkle)">On the unit<span>Loading and playing</span></a>
+  <a href="#limits" style="--c: var(--paper)">Memory and length<span>What fits on the unit</span></a>
+  <a href="#help" style="--c: var(--paper)">Problems and questions<span>When something isn't right</span></a>
+  <a href="#keys" style="--c: var(--paper)">Keyboard and mouse<span>Every shortcut</span></a>
+  <a href="#music" style="--c: var(--paper)">Your music<span>Using music you have the rights to</span></a>
+</nav>
+
+
+<h2 id="overview" style="--c: var(--paper)">How it works</h2>
+
+<div class="diagram">
+  <svg viewBox="0 0 900 210" role="img" aria-label="Your song or stems go into Strands, which writes a package file. The package is loaded on the SP-16, whose outputs go to channels on your mixer.">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#626a96"/></marker>
+    </defs>
+    <!-- Song or stems -->
+    <rect x="4" y="30" width="160" height="150" rx="12" fill="#151933" stroke="#323a66"/>
+    <text x="84" y="58" text-anchor="middle" fill="#edefff" font-size="16" font-weight="600">Your song</text>
+    <text x="84" y="78" text-anchor="middle" fill="#9aa1c9" font-size="13">or its stems</text>
+    <g stroke-width="3" stroke-linecap="round">
+      <path d="M24 100 q8 -10 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#ff7d5c"/>
+      <path d="M24 119 q8 -7 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#ffd04a"/>
+      <path d="M24 138 q8 -12 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#3fdcb6"/>
+      <path d="M24 157 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#8aa9ff"/>
+    </g>
+    <line x1="170" y1="105" x2="206" y2="105" stroke="#626a96" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Strands -->
+    <rect x="212" y="30" width="200" height="150" rx="12" fill="#1f2547" stroke="#f4f1e8" stroke-opacity="0.5"/>
+    <text x="312" y="62" text-anchor="middle" fill="#edefff" font-size="18" font-weight="700">strands</text>
+    <text x="312" y="92" text-anchor="middle" fill="#c3c8ea" font-size="13">finds the beat</text>
+    <text x="312" y="112" text-anchor="middle" fill="#c3c8ea" font-size="13">cuts it into patterns</text>
+    <text x="312" y="132" text-anchor="middle" fill="#c3c8ea" font-size="13">lays them on the pads</text>
+    <text x="312" y="152" text-anchor="middle" fill="#c3c8ea" font-size="13">writes the arrangement</text>
+    <line x1="418" y1="105" x2="454" y2="105" stroke="#626a96" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Package -->
+    <path d="M462 40 h80 l22 22 v108 a6 6 0 0 1 -6 6 h-96 a6 6 0 0 1 -6 -6 v-124 a6 6 0 0 1 6 -6 z" fill="#151933" stroke="#323a66"/>
+    <path d="M542 40 v22 h22" fill="none" stroke="#323a66"/>
+    <text x="512" y="108" text-anchor="middle" fill="#edefff" font-size="16" class="mono">.tpkg</text>
+    <text x="512" y="130" text-anchor="middle" fill="#9aa1c9" font-size="12">one file</text>
+    <line x1="572" y1="105" x2="608" y2="105" stroke="#626a96" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Unit -->
+    <rect x="614" y="30" width="130" height="150" rx="12" fill="#151933" stroke="#323a66"/>
+    <text x="679" y="56" text-anchor="middle" fill="#edefff" font-size="15" font-weight="600">SP-16</text>
+    <text x="679" y="74" text-anchor="middle" fill="#9aa1c9" font-size="12">or DJS-1000</text>
+    <g fill="#2c3566">
+      <rect x="637" y="88" width="18" height="18" rx="3"/><rect x="660" y="88" width="18" height="18" rx="3"/><rect x="683" y="88" width="18" height="18" rx="3"/><rect x="706" y="88" width="18" height="18" rx="3"/>
+      <rect x="637" y="111" width="18" height="18" rx="3"/><rect x="660" y="111" width="18" height="18" rx="3"/><rect x="683" y="111" width="18" height="18" rx="3"/><rect x="706" y="111" width="18" height="18" rx="3"/>
+      <rect x="637" y="134" width="18" height="18" rx="3"/><rect x="660" y="134" width="18" height="18" rx="3"/><rect x="683" y="134" width="18" height="18" rx="3"/><rect x="706" y="134" width="18" height="18" rx="3"/>
+      <rect x="637" y="157" width="18" height="18" rx="3"/><rect x="660" y="157" width="18" height="18" rx="3"/><rect x="683" y="157" width="18" height="18" rx="3"/><rect x="706" y="157" width="18" height="18" rx="3"/>
+    </g>
+    <!-- Cables to the mixer -->
+    <g stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M744 70 C770 70 770 64 796 64" stroke="#ff7d5c"/>
+      <path d="M744 95 C770 95 770 92 796 92" stroke="#ffd04a"/>
+      <path d="M744 120 C770 120 770 120 796 120" stroke="#3fdcb6"/>
+      <path d="M744 145 C770 145 770 148 796 148" stroke="#8aa9ff"/>
+    </g>
+    <!-- Mixer -->
+    <rect x="796" y="30" width="100" height="150" rx="12" fill="#151933" stroke="#323a66"/>
+    <text x="846" y="22" text-anchor="middle" fill="#9aa1c9" font-size="13">your mixer</text>
+    <text x="846" y="68" text-anchor="middle" fill="#ff7d5c" font-size="13" class="mono">CH 1</text>
+    <text x="846" y="96" text-anchor="middle" fill="#ffd04a" font-size="13" class="mono">CH 2</text>
+    <text x="846" y="124" text-anchor="middle" fill="#3fdcb6" font-size="13" class="mono">CH 3</text>
+    <text x="846" y="152" text-anchor="middle" fill="#8aa9ff" font-size="13" class="mono">CH 4</text>
+    <text x="450" y="205" text-anchor="middle" fill="#626a96" font-size="12">With stems on outputs 1 to 8, each stem comes out of its own pair. A full song, or the Master setting, uses the master output.</text>
+  </svg>
+</div>
+
+<p>The SP-16 doesn't play a whole song as one long sample. A project is made of <strong>patterns</strong>, short loops of a few bars, and an <strong>arrangement</strong> that plays the patterns one after another. So Strands cuts your song exactly on its bar lines, gives each piece its own pad and pattern, and writes an arrangement that plays them in order. Played from the arranger, the pieces join up seamlessly and you hear the whole song.</p>
+
+<p>The one thing Strands needs to get right is <strong>where the beats and bars are</strong>. It works this out by listening to the audio, and it gets most songs right first time. When it doesn't, the Analysis screen has simple tools to put it right by ear.</p>
+
+
+<h2 id="words" style="--c: var(--paper)">Key terms</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Word</th><th>What it means</th></tr></thead>
+  <tbody>
+    <tr><td>Stem</td><td>One part of a song on its own, such as the drums or the vocals. Stems are made by stem separation software (Traktor, Serato, Rekordbox, online services and others) and come as separate audio files, or together in one <code>.stem.mp4</code> file. Strands doesn't make stems itself; it uses the ones you give it.</td></tr>
+    <tr><td>Full song</td><td>The song as one file, with everything mixed together.</td></tr>
+    <tr><td>Beat grid</td><td>The lines Strands draws on the song where each beat falls. Brighter lines are the start of each bar.</td></tr>
+    <tr><td>Bar</td><td>Four beats. Count “1, 2, 3, 4”: the 1 is the start of the bar.</td></tr>
+    <tr><td>Pattern</td><td>A piece of the song up to 4 bars long. Each pattern plays its pads once, from its first step.</td></tr>
+    <tr><td>Lead-in</td><td>Any part of the song before the first full pattern, such as a pickup or a count-in. It gets a shorter pattern of its own so nothing is lost.</td></tr>
+    <tr><td>Scene</td><td>A page of 16 pads on the unit. With four stems a scene holds 4 patterns; with a full song it holds 16.</td></tr>
+    <tr><td>Pad, or track</td><td>One of the 16 pads in a scene. Each holds one sample. The unit calls them tracks and numbers them 1 to 16.</td></tr>
+    <tr><td>Output</td><td>A socket on the back of the unit. Outputs 1 to 8 work in pairs (1-2, 3-4, 5-6, 7-8) for stereo, or one at a time for mono. Master is the main output.</td></tr>
+    <tr><td>Package</td><td>The <code>.tpkg</code> file Strands saves. It holds the whole project, samples included, ready to load on the unit.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>How a song is cut up</h3>
+
+<div class="diagram">
+  <svg viewBox="0 0 900 250" role="img" aria-label="A song cut into a lead-in and patterns of four bars. The first four patterns make scene 1, the next four scene 2.">
+    <!-- Scenes -->
+    <path d="M10 30 v-10 h432 v10" fill="none" stroke="#9aa1c9"/>
+    <text x="226" y="14" text-anchor="middle" fill="#edefff" font-size="14" font-weight="600">Scene 1</text>
+    <path d="M450 30 v-10 h440 v10" fill="none" stroke="#9aa1c9"/>
+    <text x="670" y="14" text-anchor="middle" fill="#edefff" font-size="14" font-weight="600">Scene 2</text>
+    <!-- Pattern blocks -->
+    <g font-size="13" fill="#edefff">
+      <rect x="10" y="40" width="72" height="28" rx="4" fill="#2c3566"/><text x="46" y="59" text-anchor="middle">Lead-in</text>
+      <rect x="86" y="40" width="116" height="28" rx="4" fill="#1f2547"/><text x="144" y="59" text-anchor="middle">Pattern 2</text>
+      <rect x="206" y="40" width="116" height="28" rx="4" fill="#1f2547"/><text x="264" y="59" text-anchor="middle">Pattern 3</text>
+      <rect x="326" y="40" width="116" height="28" rx="4" fill="#1f2547"/><text x="384" y="59" text-anchor="middle">Pattern 4</text>
+      <rect x="450" y="40" width="106" height="28" rx="4" fill="#1f2547"/><text x="503" y="59" text-anchor="middle">Pattern 1</text>
+      <rect x="560" y="40" width="106" height="28" rx="4" fill="#1f2547"/><text x="613" y="59" text-anchor="middle">Pattern 2</text>
+      <rect x="670" y="40" width="106" height="28" rx="4" fill="#1f2547"/><text x="723" y="59" text-anchor="middle">Pattern 3</text>
+      <rect x="780" y="40" width="110" height="28" rx="4" fill="#1f2547"/><text x="835" y="59" text-anchor="middle">Pattern 4</text>
+    </g>
+    <!-- Stems -->
+    <g>
+      <rect x="10" y="78" width="880" height="22" rx="3" fill="#ff7d5c" fill-opacity="0.75"/>
+      <rect x="10" y="104" width="880" height="22" rx="3" fill="#ffd04a" fill-opacity="0.75"/>
+      <rect x="10" y="130" width="880" height="22" rx="3" fill="#3fdcb6" fill-opacity="0.75"/>
+      <rect x="10" y="156" width="880" height="22" rx="3" fill="#8aa9ff" fill-opacity="0.75"/>
+      <rect x="10" y="78" width="40" height="22" fill="#090b19" fill-opacity="0.7"/>
+      <rect x="10" y="104" width="40" height="22" fill="#090b19" fill-opacity="0.7"/>
+    </g>
+    <g font-size="12" fill="#0d1022" font-weight="600" text-anchor="end">
+      <text x="882" y="94">Drums</text><text x="882" y="120">Bass</text><text x="882" y="146">Other</text><text x="882" y="172">Vocals</text>
+    </g>
+    <!-- Cuts on bar lines -->
+    <g stroke="#edefff" stroke-width="2">
+      <line x1="84" y1="74" x2="84" y2="184"/><line x1="204" y1="74" x2="204" y2="184"/><line x1="324" y1="74" x2="324" y2="184"/>
+      <line x1="446" y1="74" x2="446" y2="184"/><line x1="558" y1="74" x2="558" y2="184"/><line x1="668" y1="74" x2="668" y2="184"/><line x1="778" y1="74" x2="778" y2="184"/>
+    </g>
+    <!-- Bar ticks under one pattern -->
+    <g stroke="#626a96">
+      <line x1="84" y1="192" x2="84" y2="204"/><line x1="114" y1="192" x2="114" y2="200"/><line x1="144" y1="192" x2="144" y2="200"/><line x1="174" y1="192" x2="174" y2="200"/><line x1="204" y1="192" x2="204" y2="204"/>
+    </g>
+    <g font-size="11" fill="#9aa1c9" class="mono" text-anchor="middle">
+      <text x="99" y="216">1</text><text x="129" y="216">2</text><text x="159" y="216">3</text><text x="189" y="216">4</text>
+    </g>
+    <text x="144" y="238" text-anchor="middle" fill="#9aa1c9" font-size="12">4 bars to a pattern</text>
+    <text x="560" y="214" fill="#9aa1c9" font-size="13">Every stem is cut at the same places,</text>
+    <text x="560" y="232" fill="#9aa1c9" font-size="13">so each pattern plays four pads together.</text>
+  </svg>
+</div>
+
+<p>Here the drums and bass come in a moment after the song starts, and that opening becomes the lead-in. Then the song is cut every 4 bars. Each pattern has one pad for each stem, and all four start together on the pattern's first step. Four patterns of four pads fill a scene of 16, so the next pattern starts Scene 2.</p>
+
+<h3>How a scene is laid out on the pads</h3>
+
+<div class="diagram">
+  <svg viewBox="0 0 900 300" role="img" aria-label="Sixteen pads in four rows. Each row is one pattern, read from the top. Each column is one stem.">
+    <g font-size="13">
+      <text x="140" y="20" text-anchor="middle" fill="#ff7d5c" font-weight="600">Drums</text>
+      <text x="250" y="20" text-anchor="middle" fill="#ffd04a" font-weight="600">Bass</text>
+      <text x="360" y="20" text-anchor="middle" fill="#3fdcb6" font-weight="600">Other</text>
+      <text x="470" y="20" text-anchor="middle" fill="#8aa9ff" font-weight="600">Vocals</text>
+    </g>
+    <g font-size="13" fill="#c3c8ea" text-anchor="end">
+      <text x="78" y="64">Pattern 1</text><text x="78" y="128">Pattern 2</text><text x="78" y="192">Pattern 3</text><text x="78" y="256">Pattern 4</text>
+    </g>
+    <g stroke-width="2">
+      <g fill="#ff7d5c" fill-opacity="0.22" stroke="#ff7d5c">
+        <rect x="90" y="32" width="100" height="56" rx="8"/><rect x="90" y="96" width="100" height="56" rx="8"/><rect x="90" y="160" width="100" height="56" rx="8"/><rect x="90" y="224" width="100" height="56" rx="8"/>
+      </g>
+      <g fill="#ffd04a" fill-opacity="0.22" stroke="#ffd04a">
+        <rect x="200" y="32" width="100" height="56" rx="8"/><rect x="200" y="96" width="100" height="56" rx="8"/><rect x="200" y="160" width="100" height="56" rx="8"/><rect x="200" y="224" width="100" height="56" rx="8"/>
+      </g>
+      <g fill="#3fdcb6" fill-opacity="0.22" stroke="#3fdcb6">
+        <rect x="310" y="32" width="100" height="56" rx="8"/><rect x="310" y="96" width="100" height="56" rx="8"/><rect x="310" y="160" width="100" height="56" rx="8"/><rect x="310" y="224" width="100" height="56" rx="8"/>
+      </g>
+      <g fill="#8aa9ff" fill-opacity="0.22" stroke="#8aa9ff">
+        <rect x="420" y="32" width="100" height="56" rx="8"/><rect x="420" y="96" width="100" height="56" rx="8"/><rect x="420" y="160" width="100" height="56" rx="8"/><rect x="420" y="224" width="100" height="56" rx="8"/>
+      </g>
+    </g>
+    <g font-size="12" fill="#edefff" class="mono" text-anchor="end">
+      <text x="182" y="50">13</text><text x="292" y="50">14</text><text x="402" y="50">15</text><text x="512" y="50">16</text>
+      <text x="182" y="114">09</text><text x="292" y="114">10</text><text x="402" y="114">11</text><text x="512" y="114">12</text>
+      <text x="182" y="178">05</text><text x="292" y="178">06</text><text x="402" y="178">07</text><text x="512" y="178">08</text>
+      <text x="182" y="242">01</text><text x="292" y="242">02</text><text x="402" y="242">03</text><text x="512" y="242">04</text>
+    </g>
+    <g font-size="14" fill="#c3c8ea">
+      <text x="570" y="70">Read a scene like a page,</text>
+      <text x="570" y="90">from the top row down.</text>
+      <text x="570" y="134">Each row is one pattern.</text>
+      <text x="570" y="154">Each column is one stem.</text>
+      <text x="570" y="198">The small numbers are the</text>
+      <text x="570" y="218">unit's track numbers, which</text>
+      <text x="570" y="238">count from the bottom row up.</text>
+    </g>
+  </svg>
+</div>
+
+<p>A full song in one file has no columns: its 16 patterns fill the scene one pad each, starting at the top left and reading across and down.</p>
+
+
+<h2 id="start" style="--c: var(--paper)">Getting started</h2>
+
+<h3>Installing</h3>
+
+<p>Unzip the download and keep the app wherever you like. There's nothing to install and nothing else to set up.</p>
+
+<div class="cols">
+  <div>
+    <h4>macOS</h4>
+    <p>Strands runs on Apple silicon and Intel Macs. The first time you open a downloaded copy, macOS stops it because the app isn't notarised by Apple. To allow it, once:</p>
+    <ol>
+      <li>Double-click <strong>Strands</strong>, then click <span class="ui">Done</span> on the message that appears.</li>
+      <li>Open <strong>System Settings</strong> and go to <strong>Privacy &amp; Security</strong>.</li>
+      <li>Scroll down to the message about Strands and click <span class="ui">Open Anyway</span>.</li>
+      <li>Confirm with your password if asked, then click <span class="ui">Open Anyway</span> again.</li>
+    </ol>
+    <p>After that it opens like any other app.</p>
+  </div>
+  <div>
+    <h4>Windows</h4>
+    <p>Run <strong>Strands.exe</strong> from the unzipped folder, keeping the files and folders beside it where they are.</p>
+    <p>If Windows shows <em>Windows protected your PC</em>, click <span class="ui">More info</span> and then <span class="ui">Run anyway</span>. This only happens the first time.</p>
+  </div>
+</div>
+
+<div class="box note">
+  <span class="label">Linux</span>
+  <p>There is also a Linux build, for 64-bit Intel and AMD PCs. It has not been tested: it may not run, or parts of it may not work. Run <strong>Strands.x86_64</strong> from the unzipped folder. The file browser needs GTK, which most desktop Linux systems already have.</p>
+</div>
+
+<h3>A first run-through</h3>
+
+<ol class="quick">
+  <li style="--c: var(--coral)"><strong>Add your music.</strong> On the <strong>Source</strong> screen, press <span class="ui">Add files</span> and choose a song, or all of its stems at once. Stems go on a strip each, in the strand colours.</li>
+  <li style="--c: var(--coral)"><strong>Press <span class="ui">Analyse</span></strong> at the top right. Strands finds the tempo and the bars, which takes a few seconds.</li>
+  <li style="--c: var(--saffron)"><strong>Listen.</strong> On the <strong>Analysis</strong> screen, press <kbd>Space</kbd> to play. The click should land on the beat, and each pattern should start on a “1”. If not, see <a href="#checking">Checking the beat</a>.</li>
+  <li style="--c: var(--mint)"><strong>Press <span class="ui">Export</span></strong>, look over the pads and options, then press <span class="ui">Export package</span> and choose where to save.</li>
+  <li style="--c: var(--periwinkle)"><strong>Copy the <code>.tpkg</code> file to your SP-16 or DJS-1000</strong>, load it, and press play.</li>
+</ol>
+
+
+<h2 id="topbar" style="--c: var(--paper)">The top bar</h2>
+
+<p>The bar along the top is the same on every screen.</p>
+
+<ul>
+  <li><strong>1 Source, 2 Analysis, 3 Export</strong> are the three screens, in the order you use them. Click one to go back to it; a screen you can't use yet is dimmed.</li>
+  <li><strong>Project name</strong> is the name the package is saved under, and the name the project has on the unit. Strands suggests one from your files; type over it to choose your own.</li>
+  <li><strong>Memory</strong> shows how much of the unit's 256 MB of sample memory the project will use, split by stem colour. See <a href="#limits">Memory and length</a>.</li>
+  <li>The bright button at the right is always <strong>the next step</strong>: <span class="ui">Analyse</span>, then <span class="ui">Export</span>, then <span class="ui">Export package</span>.</li>
+</ul>
+
+<p>While Strands is working, four coloured dots light up in turn at the bottom left, beside a line saying what it's doing.</p>
+
+
+<h2 id="source" style="--c: var(--coral)"><span class="step">Step 1</span>Source: adding your song or stems</h2>
+
+<figure>
+  <div class="shot">
+    <img src="../images/source.png" alt="The Source screen, with four stems loaded on four output strips">
+    <a class="pin" href="#s1" style="--x: 424; --y: -4">1</a>
+    <a class="pin" href="#s2" style="--x: 995; --y: -4">2</a>
+    <a class="pin" href="#s3" style="--x: 1260; --y: -4">3</a>
+    <a class="pin" href="#s4" style="--x: 1702; --y: -4">4</a>
+    <a class="pin" href="#s5" style="--x: 8; --y: 107">5</a>
+    <a class="pin" href="#s6" style="--x: 760; --y: 107">6</a>
+    <a class="pin" href="#s7" style="--x: 24; --y: 170">7</a>
+    <a class="pin" href="#s8" style="--x: 24; --y: 240">8</a>
+    <a class="pin" href="#s9" style="--x: 24; --y: 300">9</a>
+    <a class="pin" href="#s10" style="--x: 150; --y: 666">10</a>
+    <a class="pin" href="#s11" style="--x: 16; --y: 915">11</a>
+  </div>
+  <figcaption>The Source screen with four stems loaded, one on each output strip.</figcaption>
+</figure>
+
+<ol class="legend">
+  <li id="s1"><span class="n">1</span>The three screens. <span class="ui">2 Analysis</span> becomes available once the files have been analysed.</li>
+  <li id="s2"><span class="n">2</span>The project's name.</li>
+  <li id="s3"><span class="n">3</span>How much of the unit's sample memory the project will use.</li>
+  <li id="s4"><span class="n">4</span><span class="ui">Analyse</span> finds the beat and takes you to the Analysis screen.</li>
+  <li id="s5"><span class="n">5</span>Add files or a whole folder, or clear everything and start again.</li>
+  <li id="s6"><span class="n">6</span>Where the sound comes out: each strip on its own outputs, or everything on master.</li>
+  <li id="s7"><span class="n">7</span>A strip's outputs, in the strip's colour.</li>
+  <li id="s8"><span class="n">8</span>Stereo on the pair, or each output on its own in mono.</li>
+  <li id="s9"><span class="n">9</span>A file's card: its name, length, size and waveform. The arrows move it to the strip next door; × removes it.</li>
+  <li id="s10"><span class="n">10</span>Click anywhere in the empty part of a strip to add a file to that strip.</li>
+  <li id="s11"><span class="n">11</span>What the project will look like on the unit, and which file types Strands can read. Red text here explains why you can't go on yet.</li>
+</ol>
+
+<h3>Adding files</h3>
+
+<p>There are three ways to add music:</p>
+<ul>
+  <li><span class="ui">Add files</span> opens a file browser. Choose one file, or select all of a song's stems at once. Strands puts each stem on a strip by its name: files with “drum”, “bass”, “vocal” and so on in the name go to their usual strips.</li>
+  <li><span class="ui">Add folder</span> takes every audio file in a folder. It's handy when your separation software saves each song's stems in a folder of their own.</li>
+  <li><span class="ui">+ Add file</span>, in the empty part of a strip, adds a file to that strip.</li>
+</ul>
+
+<p>Strands reads <strong>WAV, AIFF, FLAC, MP3 and M4A/MP4</strong> files, and <strong>stem files</strong> (<code>.stem.mp4</code>), which hold all of a song's stems in one file. A stem file puts its stems on the strips in its own order. Files at 48 kHz or other sample rates are converted to 44.1 kHz, the rate the unit plays. You can add up to 16 files at a time.</p>
+
+<p>Strands only reads your files. It never changes or moves them.</p>
+
+<h3>One file, or several: three simple rules</h3>
+
+<div class="box note">
+  <span class="label">The rules</span>
+  <ol>
+    <li><strong>One file is a song.</strong> It plays from the master output, whichever strip it's on, and its waveform is drawn in several colours: <span style="color: var(--band-low)">violet</span> for the low sounds, <span style="color: var(--band-mid)">pink</span> for the middle and white for the highs.</li>
+    <li><strong>More than one file is stems, always.</strong> Each strip has its own colour and plays from its own outputs (or from master, if you choose Master).</li>
+    <li><strong>Every file is a track of its own</strong>, unless its strip is set to <span class="ui">Sum tracks</span>.</li>
+  </ol>
+</div>
+
+<h3>Output channels: where the sound comes out</h3>
+
+<p>The switch beside <strong>Output channels</strong> has two settings:</p>
+
+<div class="cols">
+  <div>
+    <h4>1 to 8</h4>
+    <p>Each strip plays from its own pair of outputs: <span class="c1">1-2</span>, <span class="c2">3-4</span>, <span class="c3">5-6</span> and <span class="c4">7-8</span>. Connect each pair to its own mixer channel and every stem gets its own fader and EQ. This is the setting Strands starts with.</p>
+  </div>
+  <div>
+    <h4>Master</h4>
+    <p>Everything plays from the master output, as one stereo mix. Use it if you only connect the unit's main output. The stems are still separate pads, so you can still mute, loop and play them on their own on the unit.</p>
+  </div>
+</div>
+
+<p>Strands remembers your choice for next time.</p>
+
+<h3>A strip's own settings</h3>
+
+<ul>
+  <li><strong>Stereo or mono.</strong> <span class="ui">1-2 stereo</span> plays the strip's files in stereo on the pair. <span class="ui">1 and 2 mono</span> splits the strip into two outputs, each playing in mono, and each file's card then shows which of the two it goes to (the <span class="ui">to 2</span> button moves it to the other one). Mono uses half the memory, which suits parts that are mono anyway, like most bass lines and kick drums.</li>
+  <li><strong>Separate tracks or Sum tracks.</strong> When a strip has more than one file, it shows a second switch. <span class="ui">Separate tracks</span> keeps each file as its own pad. <span class="ui">Sum tracks</span> mixes them into one, which saves pads and memory. For example, you could put guitars and keys on the same strip and sum them, so they share a mixer channel.</li>
+</ul>
+
+<h3>Moving and removing files</h3>
+
+<ul>
+  <li>The <span class="ui">←</span> and <span class="ui">→</span> buttons on a file's card move it to the strip on that side.</li>
+  <li>You can also drag a card onto another strip. The strip you're over lights up.</li>
+  <li><span class="ui">×</span> removes the file. <span class="ui">Clear</span> removes everything.</li>
+  <li>Moving a file adds it to the files already on that strip; it doesn't swap them. To swap two files, move each one.</li>
+  <li>Hover over a card to see the file's full name and folder.</li>
+</ul>
+
+<h3>The foot of the screen</h3>
+
+<p>The panel at the bottom says how the project will be laid out: how many tracks each pattern has, how many patterns fit in a scene, how many bars of room there are and how long the song is. If something stops you going on, it says why in red: for example, more than 16 tracks, or more audio than fits in the unit's memory.</p>
+
+<p>When you're ready, press <span class="ui">Analyse</span>. If you come back to this screen later and only move files between strips or change the outputs, Strands keeps the beat grid you've already checked, so there's nothing to redo.</p>
+
+
+<h2 id="analysis" style="--c: var(--saffron)"><span class="step">Step 2</span>Analysis: checking and fixing the beat</h2>
+
+<p>This is where you check that Strands has found the beat, and put it right if it hasn't. Most of the time you just listen to the start and a few patterns, and move on.</p>
+
+<figure>
+  <div class="shot">
+    <img src="../images/analysis.png" alt="The Analysis screen, showing the waveform with its beat grid and the Timing and Patterns panels">
+    <a class="pin" href="#a1" style="--x: 74; --y: 70">1</a>
+    <a class="pin" href="#a2" style="--x: 447; --y: 70">2</a>
+    <a class="pin" href="#a3" style="--x: 1134; --y: 70">3</a>
+    <a class="pin" href="#a4" style="--x: 1690; --y: 70">4</a>
+    <a class="pin" href="#a5" style="--x: 6; --y: 174">5</a>
+    <a class="pin" href="#a6" style="--x: 892; --y: 222">6</a>
+    <a class="pin" href="#a7" style="--x: 1739; --y: 240">7</a>
+    <a class="pin" href="#a8" style="--x: 60; --y: 260">8</a>
+    <a class="pin" href="#a9" style="--x: 6; --y: 605">9</a>
+    <a class="pin" href="#a10" style="--x: 722; --y: 666">10</a>
+    <a class="pin" href="#a11" style="--x: 22; --y: 796">11</a>
+    <a class="pin" href="#a12" style="--x: 535; --y: 752">12</a>
+    <a class="pin" href="#a13" style="--x: 22; --y: 874">13</a>
+    <a class="pin" href="#a14" style="--x: 622; --y: 724">14</a>
+    <a class="pin" href="#a15" style="--x: 1130; --y: 796">15</a>
+    <a class="pin" href="#a16" style="--x: 1156; --y: 873">16</a>
+    <a class="pin" href="#a17" style="--x: 1202; --y: 951">17</a>
+    <a class="pin" href="#a18" style="--x: 1296; --y: 815">18</a>
+    <a class="pin" href="#a19" style="--x: 560; --y: 1022">19</a>
+  </div>
+  <figcaption>The Analysis screen. Pattern 3 is selected; its flag marks where the drums come in.</figcaption>
+</figure>
+
+<ol class="legend">
+  <li id="a1"><span class="n">1</span><span class="ui">Play</span>, and where you are in the song.</li>
+  <li id="a2"><span class="n">2</span><span class="ui">Click</span> plays a metronome on the beats. <span class="ui">Loop pattern</span> repeats the selected pattern.</li>
+  <li id="a3"><span class="n">3</span><strong>Show</strong>: switch each stem on or off. What you see is what you hear.</li>
+  <li id="a4"><span class="n">4</span>Zoom out, zoom in, and <span class="ui">Fit scene</span> to show one whole scene.</li>
+  <li id="a5"><span class="n">5</span>The scene, and its patterns. Click a pattern to select it.</li>
+  <li id="a6"><span class="n">6</span>The flag: the pattern Strands counts the others from, usually where the drums come in.</li>
+  <li id="a7"><span class="n">7</span><strong>7 ms late</strong>: how far this pattern's drum hits sit from the grid lines, shown at 3 ms or more; you won't hear it when the song plays through, so one marked pattern can be left as it is.</li>
+  <li id="a8"><span class="n">8</span>The song, with the beat grid over it. The brighter lines are bar lines; the numbers under them count the bars.</li>
+  <li id="a9"><span class="n">9</span>The whole song, with every scene and pattern. Click or drag on it to jump anywhere.</li>
+  <li id="a10"><span class="n">10</span>Notes about the song, in yellow. Red means it can't be exported yet, and says why.</li>
+  <li id="a11"><span class="n">11</span>The tempo, and tools to change it.</li>
+  <li id="a12"><span class="n">12</span><strong>Move bar line</strong>: shift the grid earlier or later by a beat, half a beat or a quarter.</li>
+  <li id="a13"><span class="n">13</span><strong>Fine tuning</strong> in milliseconds, and <span class="ui">Drag grid</span>.</li>
+  <li id="a14"><span class="n">14</span><span class="ui">Reset analysis</span> undoes all your timing changes.</li>
+  <li id="a15"><span class="n">15</span><span class="ui">Start pattern at playhead</span>: the quickest fix for a grid that's out.</li>
+  <li id="a16"><span class="n">16</span><strong>Start song at</strong>: leave out an intro you don't want, a pattern at a time.</li>
+  <li id="a17"><span class="n">17</span><strong>Adjust lead-in start</strong>: leave out the start of the song a beat at a time.</li>
+  <li id="a18"><span class="n">18</span>The selected pattern: its name, length, where it is in the song and how many samples it has.</li>
+  <li id="a19"><span class="n">19</span>A reminder of the keyboard shortcuts.</li>
+</ol>
+
+<h3>Listening and moving around</h3>
+
+<ul>
+  <li>Press <span class="ui">Play</span> or <kbd>Space</kbd>. The click is on to start with; switch it with <span class="ui">Click</span> or <kbd>C</kbd>.</li>
+  <li><strong>Click on the waveform</strong> to move the playhead. While it's playing, a click jumps to the start of the beat you clicked, so the music stays in time. When it's stopped, it goes exactly where you click. Hold <kbd>Shift</kbd> to go exactly where you click while playing too.</li>
+  <li><strong>Scroll</strong> on the waveform to zoom in and out, and <strong>drag</strong> it to move along the song. <span class="ui">Fit scene</span> or <kbd>F</kbd> shows the whole scene again.</li>
+  <li><kbd>←</kbd> <kbd>→</kbd> select the pattern before or after; <kbd>↑</kbd> <kbd>↓</kbd> go to the scene before or after.</li>
+  <li><span class="ui">Loop pattern</span> or <kbd>L</kbd> repeats the selected pattern, which is the best way to hear whether it loops cleanly.</li>
+  <li><strong>Show</strong> switches stems on and off, so you can listen to the drums against the click on their own. The keys <kbd>1</kbd> to <kbd>4</kbd> switch each strip; <kbd>Shift</kbd> with a number plays that strip by itself (press it again for all of them), and <kbd>5</kbd> turns them all back on. With every stem off, you only hear the click.</li>
+</ul>
+
+<h3 id="checking">Checking the beat</h3>
+
+<p>Play from the start with the click on, and ask yourself two things:</p>
+<ol>
+  <li><strong>Is the click on the beat?</strong> It should land on the kick drums, not between them.</li>
+  <li><strong>Does each pattern start on a “1”?</strong> The start of each pattern should feel like the start of a bar, not somewhere in the middle of one. Selecting a pattern and turning on <span class="ui">Loop pattern</span> makes this easy to hear: a pattern that starts in the right place loops round smoothly.</li>
+</ol>
+<p>Then jump to a few places later in the song, using the strip along the bottom, and check again.</p>
+
+<p>On the waveform, the beat lines should sit on the front edge of the drum hits. Here's what the usual problems look like, and the button that fixes each one:</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 900 400" role="img" aria-label="Four examples of a beat grid against drum hits: in time, half a beat out, starting on the wrong beat, and a little late.">
+    <g font-size="15" fill="#edefff" font-weight="600">
+      <text x="0" y="40">In time</text>
+      <text x="0" y="140">Half a beat out</text>
+      <text x="0" y="240">Bar on the wrong beat</text>
+      <text x="0" y="340">A little late</text>
+    </g>
+    <g font-size="13" fill="#9aa1c9">
+      <text x="0" y="60">Nothing to do.</text>
+      <text x="0" y="160">The click is between</text><text x="0" y="176">the kicks.</text>
+      <text x="0" y="260">The click is on the beat, but</text><text x="0" y="276">patterns start mid-bar.</text>
+      <text x="0" y="360">The click is slightly</text><text x="0" y="376">behind the kicks.</text>
+    </g>
+    <!-- Kick hits: a sharp rise and slow fall, every 70 units from x=250. Bar starts on the 1st and 5th. -->
+    <defs>
+      <path id="hit" d="M0 0 L0 -34 Q6 -10 30 -2 L40 0 L0 0 Q6 10 0 34 Z"/>
+      <path id="hitsmall" d="M0 0 L0 -20 Q6 -6 26 -1 L34 0 L0 0 Q6 6 0 20 Z"/>
+    </defs>
+    <!-- Row 1 -->
+    <g transform="translate(0,50)">
+      <g fill="#ff7d5c" fill-opacity="0.85">
+        <use href="#hit" x="250"/><use href="#hitsmall" x="320"/><use href="#hitsmall" x="390"/><use href="#hitsmall" x="460"/><use href="#hit" x="530"/><use href="#hitsmall" x="600"/><use href="#hitsmall" x="670"/><use href="#hitsmall" x="740"/><use href="#hit" x="810"/>
+      </g>
+      <g stroke="#3a447a" stroke-width="2"><line x1="320" y1="-40" x2="320" y2="40"/><line x1="390" y1="-40" x2="390" y2="40"/><line x1="460" y1="-40" x2="460" y2="40"/><line x1="600" y1="-40" x2="600" y2="40"/><line x1="670" y1="-40" x2="670" y2="40"/><line x1="740" y1="-40" x2="740" y2="40"/></g>
+      <g stroke="#edefff" stroke-width="2"><line x1="250" y1="-40" x2="250" y2="40"/><line x1="530" y1="-40" x2="530" y2="40"/><line x1="810" y1="-40" x2="810" y2="40"/></g>
+      <text x="880" y="5" fill="#3fdcb6" font-size="22" text-anchor="middle">✓</text>
+    </g>
+    <!-- Row 2: lines half a beat after the hits -->
+    <g transform="translate(0,150)">
+      <g fill="#ff7d5c" fill-opacity="0.85">
+        <use href="#hit" x="250"/><use href="#hitsmall" x="320"/><use href="#hitsmall" x="390"/><use href="#hitsmall" x="460"/><use href="#hit" x="530"/><use href="#hitsmall" x="600"/><use href="#hitsmall" x="670"/><use href="#hitsmall" x="740"/><use href="#hit" x="810"/>
+      </g>
+      <g stroke="#3a447a" stroke-width="2"><line x1="355" y1="-40" x2="355" y2="40"/><line x1="425" y1="-40" x2="425" y2="40"/><line x1="495" y1="-40" x2="495" y2="40"/><line x1="635" y1="-40" x2="635" y2="40"/><line x1="705" y1="-40" x2="705" y2="40"/><line x1="775" y1="-40" x2="775" y2="40"/></g>
+      <g stroke="#edefff" stroke-width="2"><line x1="285" y1="-40" x2="285" y2="40"/><line x1="565" y1="-40" x2="565" y2="40"/><line x1="845" y1="-40" x2="845" y2="40"/></g>
+    </g>
+    <!-- Row 3: lines on the hits, but bar lines on the 2nd beat -->
+    <g transform="translate(0,250)">
+      <g fill="#ff7d5c" fill-opacity="0.85">
+        <use href="#hit" x="250"/><use href="#hitsmall" x="320"/><use href="#hitsmall" x="390"/><use href="#hitsmall" x="460"/><use href="#hit" x="530"/><use href="#hitsmall" x="600"/><use href="#hitsmall" x="670"/><use href="#hitsmall" x="740"/><use href="#hit" x="810"/>
+      </g>
+      <g stroke="#3a447a" stroke-width="2"><line x1="250" y1="-40" x2="250" y2="40"/><line x1="390" y1="-40" x2="390" y2="40"/><line x1="460" y1="-40" x2="460" y2="40"/><line x1="530" y1="-40" x2="530" y2="40"/><line x1="670" y1="-40" x2="670" y2="40"/><line x1="740" y1="-40" x2="740" y2="40"/><line x1="810" y1="-40" x2="810" y2="40"/></g>
+      <g stroke="#edefff" stroke-width="2"><line x1="320" y1="-40" x2="320" y2="40"/><line x1="600" y1="-40" x2="600" y2="40"/></g>
+    </g>
+    <!-- Row 4: lines a little after the hits -->
+    <g transform="translate(0,350)">
+      <g fill="#ff7d5c" fill-opacity="0.85">
+        <use href="#hit" x="250"/><use href="#hitsmall" x="320"/><use href="#hitsmall" x="390"/><use href="#hitsmall" x="460"/><use href="#hit" x="530"/><use href="#hitsmall" x="600"/><use href="#hitsmall" x="670"/><use href="#hitsmall" x="740"/><use href="#hit" x="810"/>
+      </g>
+      <g stroke="#3a447a" stroke-width="2"><line x1="330" y1="-40" x2="330" y2="40"/><line x1="400" y1="-40" x2="400" y2="40"/><line x1="470" y1="-40" x2="470" y2="40"/><line x1="610" y1="-40" x2="610" y2="40"/><line x1="680" y1="-40" x2="680" y2="40"/><line x1="750" y1="-40" x2="750" y2="40"/></g>
+      <g stroke="#edefff" stroke-width="2"><line x1="260" y1="-40" x2="260" y2="40"/><line x1="540" y1="-40" x2="540" y2="40"/><line x1="820" y1="-40" x2="820" y2="40"/></g>
+    </g>
+    <g font-size="12" fill="#9aa1c9">
+      <text x="250" y="398">Kick drums in coral. Bright lines are bar lines, dim lines are beats.</text>
+    </g>
+  </svg>
+</div>
+
+<div class="table-wrap">
+<table class="fix">
+  <thead><tr><th>What you hear or see</th><th>What to do</th></tr></thead>
+  <tbody>
+    <tr><td>The click is between the kicks</td><td><strong>Move bar line</strong> by <span class="ui">½ beat</span>, either way.</td></tr>
+    <tr><td>The click is on the beat, but patterns start in the middle of a bar</td><td><strong>Move bar line</strong> by <span class="ui">1 beat</span>, earlier or later, until a pattern starts on the “1”. Or use <span class="ui">Start pattern at playhead</span> (below).</td></tr>
+    <tr><td>The click is a little early or late all the way through</td><td><strong>Fine tuning</strong>: <span class="ui">-1</span> and <span class="ui">+1</span> move the grid by a millisecond, <span class="ui">-10</span> and <span class="ui">+10</span> by ten. Or use <kbd>,</kbd> and <kbd>.</kbd>, with <kbd>Shift</kbd> for ten.</td></tr>
+    <tr><td>The click is twice as fast, or half as fast, as the music</td><td>Press <span class="ui">÷2</span> or <span class="ui">×2</span>.</td></tr>
+    <tr><td>The click starts in time but drifts away later in the song</td><td>The tempo is slightly off. Press <span class="ui">Refit</span>. If that doesn't do it, tap <span class="ui">Tap</span> (or <kbd>T</kbd>) in time with the beat for a few bars, then press <span class="ui">Refit</span> to tighten it up.</td></tr>
+    <tr><td>You know the tempo</td><td>Type it in the tempo box and press Return.</td></tr>
+    <tr><td>It's got in a muddle</td><td><span class="ui">Reset analysis</span> puts everything back to how Strands first found it.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Start pattern at playhead: the quickest fix</h3>
+
+<p>If the grid is out, this one button usually puts it right:</p>
+<ol>
+  <li>Find a place where a pattern really should start: the first kick of the drop, or the start of the verse. Zoom in so you can see the hit clearly.</li>
+  <li>With playback stopped, click on the front edge of that hit to put the playhead there.</li>
+  <li>Press <span class="ui">Start pattern at playhead</span>.</li>
+</ol>
+<p>Strands moves the grid so that a bar line, and the start of a pattern, falls exactly there, and then fine-tunes the lines so they sit on the drum hits. The flag on the lane moves to that pattern. Patterns are counted from there in both directions.</p>
+
+<h3>Drag grid</h3>
+
+<p>Switch on <span class="ui">Drag grid</span> and dragging the waveform moves the beat grid instead of the view, so you can slide the lines onto the hits by eye. Switch it off again to drag the view.</p>
+
+<h3>The beginning of the song</h3>
+
+<p>Songs rarely start exactly on a bar line. Whatever comes before the first full pattern becomes the <strong>lead-in</strong>: a shorter pattern of its own, so the opening isn't lost. Strands pads it with silence at the front so that it starts on a beat, and the notes under the waveform say how much. Silence at the very start of the file is left out.</p>
+
+<div class="diagram">
+  <svg viewBox="0 0 900 150" role="img" aria-label="The lead-in: silence added in front up to a beat, then the opening of the song, then Pattern 2 starting on bar 1.">
+    <g stroke="#3a447a" stroke-width="2"><line x1="100" y1="20" x2="100" y2="100"/><line x1="200" y1="20" x2="200" y2="100"/><line x1="300" y1="20" x2="300" y2="100"/><line x1="500" y1="20" x2="500" y2="100"/><line x1="600" y1="20" x2="600" y2="100"/><line x1="700" y1="20" x2="700" y2="100"/><line x1="800" y1="20" x2="800" y2="100"/></g>
+    <line x1="400" y1="10" x2="400" y2="110" stroke="#edefff" stroke-width="2"/>
+    <rect x="100" y="56" width="62" height="8" fill="#626a96" fill-opacity="0.5"/>
+    <path d="M162 60 q10 -14 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#3fdcb6" stroke-width="3"/>
+    <g fill="#ff7d5c" fill-opacity="0.85">
+      <path d="M400 60 L400 24 Q406 50 430 58 L440 60 L400 60 Q406 70 400 96 Z"/>
+      <path d="M500 60 L500 36 Q506 54 526 59 L534 60 L500 60 Q506 66 500 84 Z"/>
+      <path d="M600 60 L600 36 Q606 54 626 59 L634 60 L600 60 Q606 66 600 84 Z"/>
+      <path d="M700 60 L700 36 Q706 54 726 59 L734 60 L700 60 Q706 66 700 84 Z"/>
+      <path d="M800 60 L800 24 Q806 50 830 58 L840 60 L800 60 Q806 70 800 96 Z"/>
+    </g>
+    <path d="M400 60 q10 -12 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#3fdcb6" stroke-width="3" stroke-opacity="0.6"/>
+    <path d="M100 118 v8 h298 v-8" fill="none" stroke="#9aa1c9"/>
+    <path d="M402 118 v8 h496 v-8" fill="none" stroke="#9aa1c9"/>
+    <text x="250" y="144" text-anchor="middle" fill="#edefff" font-size="14">Lead-in: 3 beats</text>
+    <text x="650" y="144" text-anchor="middle" fill="#edefff" font-size="14">Pattern 2, from bar 1</text>
+    <text x="131" y="44" text-anchor="middle" fill="#9aa1c9" font-size="12">silence</text>
+    <text x="280" y="44" text-anchor="middle" fill="#9aa1c9" font-size="12">the song's opening</text>
+  </svg>
+</div>
+
+<p>There are two ways to leave out the start of a song:</p>
+<ul>
+  <li><strong>Start song at</strong> drops whole patterns. Press <span class="ui">→</span> to start at <em>Pattern 2</em>, then <em>Pattern 3</em> and so on, which is useful for a long intro you don't need. <span class="ui">←</span> brings them back. The part you've left out is shown dimmed on the strip along the bottom.</li>
+  <li><strong>Adjust lead-in start</strong> drops one beat at a time from the front, for example a count-in or a stray note before the first beat. It shows the bar and beat where the song now starts (“Bar 1, beat 2”) and how long the lead-in is.</li>
+</ul>
+<p>Neither changes the beat grid; they only change where the package starts.</p>
+
+<h3>Pattern length</h3>
+
+<p>Patterns are 4 bars long, but some songs add or drop a couple of bars somewhere, for example before a chorus. After that, the big moments land in the middle of a pattern instead of at the start.</p>
+
+<p>To fix it, select the pattern just before the point where things go out, then shorten it under <strong>Pattern length</strong> with <span class="ui">←</span> (or <kbd>[</kbd>). It can be 1 to 4 bars. Everything after it moves along to match, and nothing before it changes. <span class="ui">→</span> (or <kbd>]</kbd>) makes it longer again.</p>
+
+<p>The lead-in's length is set by where the song starts, and the last pattern simply runs to the end of the song, so neither can be changed here.</p>
+
+<h3>The notes under the waveform</h3>
+
+<p>The line between the song strip and the panels tells you about anything Strands has done or found. In yellow, it's for information: silence it has left out at the start, silence it has added in front of the lead-in, or stems that are too loud when added together. In <span style="color: var(--bad)">red</span>, it's the reason the song can't be exported yet, such as too many patterns or too much audio for the unit.</p>
+
+<p>When you're happy, press <span class="ui">Export</span>.</p>
+
+
+<h2 id="export" style="--c: var(--mint)"><span class="step">Step 3</span>Export: pads, options and saving</h2>
+
+<p>This screen shows the project as it will be on the unit, lets you play the pads, and sets how they behave when you play them yourself.</p>
+
+<figure>
+  <div class="shot">
+    <img src="../images/export.png" alt="The Export screen, showing sixteen pads of scene 2 and the Options and Package panels">
+    <a class="pin" href="#e1" style="--x: 28; --y: 145">1</a>
+    <a class="pin" href="#e2" style="--x: 40; --y: 316">2</a>
+    <a class="pin" href="#e3" style="--x: 862; --y: 116">3</a>
+    <a class="pin" href="#e4" style="--x: 1300; --y: 236">4</a>
+    <a class="pin" href="#e5" style="--x: 1300; --y: 378">5</a>
+    <a class="pin" href="#e6" style="--x: 1670; --y: 462">6</a>
+    <a class="pin" href="#e7" style="--x: 1308; --y: 586">7</a>
+    <a class="pin" href="#e8" style="--x: 1538; --y: 586">8</a>
+    <a class="pin" href="#e9" style="--x: 1332; --y: 632">9</a>
+    <a class="pin" href="#e10" style="--x: 1695; --y: -4">10</a>
+  </div>
+  <figcaption>The Export screen, showing scene 2 of 7.</figcaption>
+</figure>
+
+<ol class="legend">
+  <li id="e1"><span class="n">1</span>A pad, laid out as on the unit: the stem's name and colour, the unit's track number, the pattern it belongs to and its waveform. Click it to hear it.</li>
+  <li id="e2"><span class="n">2</span>The pad's own <span class="ui">Choke</span> and <span class="ui">Loop</span> buttons, and its play sign.</li>
+  <li id="e3"><span class="n">3</span>Step through the scenes, or use <kbd>←</kbd> <kbd>→</kbd>.</li>
+  <li id="e4"><span class="n">4</span>Choke group and loop for each stem.</li>
+  <li id="e5"><span class="n">5</span>The same for every pad at once.</li>
+  <li id="e6"><span class="n">6</span>Time stretch, for the whole project.</li>
+  <li id="e7"><span class="n">7</span>Whether the unit opens with the arranger on.</li>
+  <li id="e8"><span class="n">8</span>Whether the arrangement sets the unit's tempo to the song's.</li>
+  <li id="e9"><span class="n">9</span>A summary of the package, and where it was saved.</li>
+  <li id="e10"><span class="n">10</span><span class="ui">Export package</span> saves the <code>.tpkg</code> file.</li>
+</ol>
+
+<h3>Playing the pads</h3>
+
+<ul>
+  <li><strong>Click a pad</strong> to play its sample from the start. Click it again to restart it. You can play several at once.</li>
+  <li>To stop a pad, click its <strong>■</strong> sign, or hold <kbd>Shift</kbd> and click anywhere on the pad. <span class="ui">Stop</span>, at the top of the pads, or <kbd>Space</kbd>, stops them all.</li>
+  <li>A playing pad has a pale edge and a line moving across its waveform.</li>
+  <li>Pads play as they will on the unit: looped pads go round, and choked pads cut each other off. They play at the song's own tempo; time stretch isn't heard here.</li>
+  <li>A pad that reads <em>Empty</em> has nothing on it. Strands leaves out samples that are silent, or as good as silent, such as the vocal stem during an instrumental part. They'd only take up memory.</li>
+</ul>
+
+<h3>Choke groups</h3>
+
+<p>Pads in the same <strong>choke group</strong> cut each other off: start one, and any other pad in its group that's playing stops. With a stem's pads in a choke group, you can jump between its patterns while playing pads by hand, and you only ever hear one at a time, just as in the song.</p>
+
+<p>Each stem gets a group of its own, so the drums only cut off drums, never the vocals. <span class="ui">Off</span> lets pads overlap, which is what you might want for vocal phrases or one-shots.</p>
+
+<h3>Loop</h3>
+
+<p>A looped pad plays round and round until you stop it, rather than playing once. It's useful for holding a groove going under a mix, or building a section live.</p>
+
+<p>When the arrangement is on, a looped pad is always choked too: otherwise it would keep going after its pattern and pile up under the next one. Its <span class="ui">Choke</span> button shows lit but dimmed, and can't be switched off.</p>
+
+<h3>Setting stems, or single pads</h3>
+
+<ul>
+  <li>A stem's row under <strong>Options</strong> sets every pad of that stem. <strong>All</strong> sets every pad in the project.</li>
+  <li>A pad's own <span class="ui">Choke</span> and <span class="ui">Loop</span> buttons set just that pad.</li>
+  <li>Whichever you set last wins. So you can loop all of the drums, then switch the loop off on one pad.</li>
+  <li>A row shows what you last set it to, which isn't always what every one of its pads is now.</li>
+</ul>
+
+<h3>Time stretch</h3>
+
+<p>This decides what the samples do when the unit's tempo changes, for example when you move its tempo control or sync it to other players with Pro DJ Link.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Setting</th><th>What happens when the tempo changes</th></tr></thead>
+  <tbody>
+    <tr><td><span class="ui">Off</span></td><td>The samples play at their own speed, as in the original song. This is the default, and the right choice for playing the song as it is.</td></tr>
+    <tr><td><span class="ui">M.TMP</span></td><td>Master tempo: the samples speed up or slow down with the tempo and keep their pitch, like master tempo on a CDJ.</td></tr>
+    <tr><td><span class="ui">RESMPL</span></td><td>Resample: the samples speed up or slow down with the tempo and their pitch goes up or down with it, like a turntable's pitch fader.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Arrangement</h3>
+
+<p>The DJS-1000 has no arranger, so these two only matter on the SP-16.</p>
+
+<ul>
+  <li><strong>Arrangement</strong>: <span class="ui">On</span> opens the project on the unit with its arranger switched on, ready to play the song from start to finish. <span class="ui">Off</span> opens it ready for playing pads and patterns by hand. The arrangement is saved in the project either way, so you can switch the arranger on later on the unit.</li>
+  <li><strong>Add tempo to arrangement</strong>: <span class="ui">On</span> stores the song's tempo in the arrangement, so the unit goes to that tempo when it plays it. <span class="ui">Off</span> leaves the tempo to the unit, so the song follows whatever tempo the unit is set to or synced to.</li>
+</ul>
+
+<div class="box tip">
+  <span class="label">Tip</span>
+  <p>Strands sets <strong>Add tempo to arrangement</strong> for you when you change Time stretch: <span class="ui">On</span> with stretch <span class="ui">Off</span>, so the song plays at its own speed; <span class="ui">Off</span> with <span class="ui">M.TMP</span> or <span class="ui">RESMPL</span>, so the song follows the unit's tempo. You can still change it afterwards.</p>
+</div>
+
+<h3>Saving the package</h3>
+
+<p>Press <span class="ui">Export package</span> (or <kbd>Cmd</kbd>+<kbd>E</kbd> on a Mac, <kbd>Ctrl</kbd>+<kbd>E</kbd> on Windows) and choose where to save it. When it's done, the <strong>Package</strong> panel says where the file went, with a <span class="ui">Show in folder</span> button to find it.</p>
+
+<p>The Package panel also sums up the project: how many patterns and scenes there are, the tempo, the memory used, and which stem comes out of which output.</p>
+
+
+<h2 id="unit" style="--c: var(--periwinkle)">On the unit</h2>
+
+<ol>
+  <li>Copy the <code>.tpkg</code> file to your SP-16 or DJS-1000, the same way you'd copy any project package to it.</li>
+  <li>Load the project on the unit.</li>
+  <li>On the SP-16, with the arrangement on, press play: the song plays from start to finish. The DJS-1000 has no arranger: you play the patterns yourself.</li>
+</ol>
+
+<p>With stems on outputs 1 to 8, connect each pair of outputs to its own channel on your mixer: <span class="c1">1-2</span> for the first strip, <span class="c2">3-4</span> for the second, and so on. A strip you set to mono uses each output of its pair on its own. Strands also colours each stem's pads on the unit to match the strips: colours 1, 5, 9 and 13 in the unit's palette.</p>
+
+
+
+<h2 id="limits" style="--c: var(--paper)">Memory and length</h2>
+
+<p>The SP-16 and DJS-1000 have <strong>256 MB</strong> of memory for samples. The memory meter at the top of every screen shows how much of it your project will use, in the stem colours. It turns red when the project won't fit.</p>
+
+<ul>
+  <li>Four stereo stems use about <strong>40 MB a minute</strong>, so they fit up to about <strong>6 minutes</strong>. A full song as one file uses a quarter of that.</li>
+  <li>To make room: set a strip to <strong>mono</strong> (half the memory), <strong>sum</strong> two stems into one, or remove a stem you don't need.</li>
+  <li>Silent samples are left out automatically and use no memory.</li>
+</ul>
+
+<p>There's also a limit on length: a project holds 16 scenes. With four stems that's 64 patterns of 4 bars, or 256 bars, which is about 8 minutes at 130 BPM. The foot of the Source screen shows the bars of room, and the top of the Patterns panel shows how many you're using.</p>
+
+<p>The units play between <strong>60 and 220 BPM</strong>. If the tempo is outside that range, a note in yellow beside <strong>Tempo (BPM)</strong> says so. The song can still be exported, but it won't play in time on the unit.</p>
+
+
+<h2 id="help" style="--c: var(--paper)">Problems and questions</h2>
+
+<h4>Analyse is dimmed</h4>
+<p>The foot of the Source screen says why in red. Either there are more than 16 tracks, or the last analysis found the project needs more memory or more patterns than the unit has. Set a strip to <span class="ui">Sum tracks</span> or to mono, or remove some files, and <span class="ui">Analyse</span> comes back on. The beat grid is kept, so it goes straight to the Analysis screen.</p>
+
+<h4>The notes under the waveform are red</h4>
+<p>The song can't be exported as it is, and the note says why: usually it's too long, or uses too much memory. See <a href="#limits">Memory and length</a>.</p>
+
+<h4>A file won't load</h4>
+<p>Strands can't read copy-protected files, such as some music bought from streaming services. Stem files whose stems are in Apple Lossless can only be read on a Mac. Any other file that won't load may be damaged; try opening it in another app.</p>
+
+<h4>The beat is right at the start but wrong later on</h4>
+<p>Strands uses one steady tempo for the whole song. Try <span class="ui">Refit</span>, or <span class="ui">Tap</span> and then <span class="ui">Refit</span>. A song whose tempo changes, or one played by a live drummer without a click, won't line up all the way through.</p>
+
+<h4>The stems are out of step with each other</h4>
+<p>Strands takes it that all the stems start at the same moment, as your separation software saved them. Use stems from the same separation of the same song, without trimming any of them.</p>
+
+<h4>The stems sound quieter than the original song</h4>
+<p>Separated stems, added back together, are often a little quieter than the original. That's down to the separation, not to Strands. Turn up the channels on the mixer to match.</p>
+
+<h4>I can't hear one of the stems on the Analysis screen</h4>
+<p>Check that its <strong>Show</strong> button is on, or press <kbd>5</kbd> to turn them all on.</p>
+
+<h4>Does Strands change my files?</h4>
+<p>No. It only reads them. Everything it makes goes into the package you save.</p>
+
+
+<h2 id="keys" style="--c: var(--paper)">Keyboard and mouse</h2>
+
+<p>Shortcuts don't work while you're typing in a box, such as the project name or the tempo; press Return or click elsewhere first. On Windows, use <kbd>Ctrl</kbd> where this says <kbd>Cmd</kbd>.</p>
+
+<h3>Analysis screen</h3>
+
+<div class="table-wrap">
+<table class="keys">
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next pattern</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Previous / next scene</td></tr>
+    <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>Make the selected pattern a bar shorter / longer</td></tr>
+    <tr><td><kbd>L</kbd></td><td>Loop pattern on / off</td></tr>
+    <tr><td><kbd>C</kbd></td><td>Click on / off</td></tr>
+    <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>Move the grid 1 ms earlier / later (10 ms with <kbd>Shift</kbd>)</td></tr>
+    <tr><td><kbd>T</kbd></td><td>Tap tempo</td></tr>
+    <tr><td><kbd>F</kbd></td><td>Fit scene</td></tr>
+    <tr><td><kbd>-</kbd> <kbd>=</kbd></td><td>Zoom out / in</td></tr>
+    <tr><td><kbd>1</kbd> – <kbd>4</kbd></td><td>Switch a strip's stems on / off</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>1</kbd> – <kbd>4</kbd></td><td>Play that strip by itself (again for all)</td></tr>
+    <tr><td><kbd>5</kbd></td><td>All stems on</td></tr>
+    <tr><td><kbd>Cmd</kbd> + <kbd>E</kbd></td><td>Go to Export</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Export screen</h3>
+
+<div class="table-wrap">
+<table class="keys">
+  <thead><tr><th>Key</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next scene</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Stop all pads</td></tr>
+    <tr><td><kbd>Cmd</kbd> + <kbd>E</kbd></td><td>Export package</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Mouse</h3>
+
+<div class="table-wrap">
+<table class="keys">
+  <thead><tr><th>Where</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Waveform, click</td><td>Move the playhead: to the start of the beat while playing, exactly where you click when stopped</td></tr>
+    <tr><td>Waveform, <kbd>Shift</kbd> + click</td><td>Move the playhead exactly where you click, even while playing</td></tr>
+    <tr><td>Waveform, scroll</td><td>Zoom in and out</td></tr>
+    <tr><td>Waveform, drag</td><td>Move along the song, or move the grid with <span class="ui">Drag grid</span> on</td></tr>
+    <tr><td>Pattern on the lane</td><td>Select it</td></tr>
+    <tr><td>Song strip, click or drag</td><td>Jump to that part of the song</td></tr>
+    <tr><td>Pad, click</td><td>Play it from the start</td></tr>
+    <tr><td>Pad, <kbd>Shift</kbd> + click, or its ■</td><td>Stop it</td></tr>
+    <tr><td>File card, drag</td><td>Move the file to another strip</td></tr>
+  </tbody>
+</table>
+</div>
+
+
+<h2 id="music" style="--c: var(--paper)">Your music</h2>
+
+<p>Use Strands with music you own or have the rights to use.</p>
+<ul>
+  <li>Buying a track usually gives you a licence to play it yourself. Splitting it into stems and loading it on your own unit to perform with is the kind of thing DJ software does every day.</li>
+  <li>Packages, stems and samples made from commercial music are for your own use. Don't share or sell them, or release music made from them, without the rights holders' permission.</li>
+  <li>If you play out in public, the venue or you may need the usual performance licences. In some countries, copies made for DJing need a licence of their own; check what applies where you play.</li>
+  <li>Strands can't read copy-protected files, and doesn't try to.</li>
+</ul>
+<p>This isn't legal advice. If you're unsure, ask the rights holder or a music licensing body in your country.</p>
+
+<p class="back"><a href="#top">↑ Back to the top</a></p>
+
+<div class="page-footer">Strands User Guide · Version 1.0</div>
+
+</div>
+<script>
+  // A pin scrolls only as far as its explanation, which then sits at the foot of the window with the
+  // picture still above it, rather than at the top.
+  document.querySelectorAll(".pin").forEach(function (pin) {
+    pin.addEventListener("click", function (event) {
+      var item = document.querySelector(pin.getAttribute("href"));
+      if (!item)
+        return;
+      event.preventDefault();
+      item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      item.classList.add("lit");
+      setTimeout(function () { item.classList.remove("lit"); }, 1500);
+    });
+  });
+</script>
+</body>
+</html>

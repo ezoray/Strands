@@ -1,0 +1,20 @@
+{
+    "name": "Strands.Editor",
+    "rootNamespace": "Strands.Editor",
+    "references": [
+        "Strands.Sp16.Format",
+        "Strands.Audio",
+        "Strands.Export"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

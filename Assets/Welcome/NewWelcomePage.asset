@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0885f594ab85594caa28e1a96cbe0d8, type: 3}
+  m_Name: NewWelcomePage
+  m_EditorClassIdentifier: Unity.Tutorials.Editor::Unity.Tutorials.Editor.TutorialWelcomePage
+  m_HeaderContent:
+    m_ContentType: 0
+    m_Image: {fileID: 2800000, guid: 474ce57d7c1704418af05d72d996ae5e, type: 3}
+    m_VideoClip: {fileID: 0}
+    m_Url: 
+    m_AutoStart: 1
+    m_Loop: 1
+  m_WindowTitle:
+    m_Untranslated: 2D URP Project
+  m_Title:
+    m_Untranslated: Welcome to 2D URP Project
+  m_Description:
+    m_Untranslated: "This project is configured with an empty scene and a default Universal Render Pipeline 2D Renderer to get you started with your 2D Game. \n\nNew to 2D? Click on Explore 2D to learn more.\n\nHave fun!"
+  m_MaskEditor: 0
+  m_Buttons:
+  - Text:
+      m_Untranslated: Explore 2D
+    Tooltip:
+      m_Untranslated: 
+    OnClick:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 11400000, guid: 3becb391d378c4f35bea7e2cfd89f1d5, type: 2}
+          m_TargetAssemblyTypeName: DefaultNamespace.Welcome2DScript, Assembly-CSharp
+          m_MethodName: Open2DLandingPage
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+  - Text:
+      m_Untranslated: Close
+    Tooltip:
+      m_Untranslated: 
+    OnClick:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 11400000}
+          m_TargetAssemblyTypeName: Unity.Tutorials.Editor.TutorialWelcomePage, Unity.Tutorials.Editor
+          m_MethodName: CloseCurrentModalDialog
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1

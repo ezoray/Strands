@@ -1,0 +1,1481 @@
+/*
+ * The Thread look. Every colour is named here once; the parts that are drawn in code take the
+ * same values from Theme.cs. The built-in controls are restyled first, and the classes after them
+ * win where the two meet.
+ *
+ * The typefaces are Bricolage Grotesque and, for figures and keys, DM Mono. Each weight is a file
+ * of its own, so a heavier weight is a different -unity-font-definition and never
+ * -unity-font-style: bold, which would thicken the regular file.
+ */
+
+:root, .root {
+    --ink: rgb(13, 16, 34);
+    --surface: rgb(21, 25, 51);
+    --raised: rgb(31, 37, 71);
+    --selected: rgb(44, 53, 102);
+    --pressed: rgb(58, 70, 130);
+    --well: rgb(9, 11, 25);
+    /* The grounds of the bars and panels let a little of the backdrop through. */
+    --surface-clear: rgba(21, 25, 51, 0.74);
+    --well-clear: rgba(9, 11, 25, 0.7);
+    --line: rgb(38, 45, 82);
+    --edge: rgb(50, 58, 102);
+    --text: rgb(237, 239, 255);
+    --soft: rgb(195, 200, 234);
+    --quiet: rgb(154, 161, 201);
+    --faint: rgb(98, 106, 150);
+    --paper: rgb(244, 241, 232);
+    --paper-hover: rgb(226, 223, 212);
+    --note: rgb(255, 214, 153);
+    --bad: rgb(255, 176, 186);
+    --bad-ground: rgb(74, 22, 38);
+    --out-1: rgb(255, 125, 92);
+    --out-2: rgb(255, 208, 74);
+    --out-3: rgb(63, 220, 182);
+    --out-4: rgb(138, 169, 255);
+    --font: url("Fonts/BricolageGrotesque-Regular.ttf");
+    --font-medium: url("Fonts/BricolageGrotesque-Medium.ttf");
+    --font-semibold: url("Fonts/BricolageGrotesque-SemiBold.ttf");
+    --font-bold: url("Fonts/BricolageGrotesque-Bold.ttf");
+    --mono: url("Fonts/DMMono-Regular.ttf");
+}
+
+.root {
+    flex-grow: 1;
+    background-color: var(--ink);
+    color: var(--text);
+    font-size: 13px;
+    -unity-font-definition: var(--font);
+}
+
+/* Built-in controls */
+
+.unity-label {
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+}
+
+.unity-button {
+    flex-shrink: 0;
+    height: 30px;
+    margin: 0 8px 0 0;
+    padding: 0 12px;
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 8px;
+    background-color: var(--raised);
+    color: var(--text);
+    -unity-font-definition: var(--font-medium);
+    -unity-text-align: middle-center;
+}
+
+.unity-button:hover {
+    background-color: var(--selected);
+}
+
+.unity-button:active {
+    background-color: var(--pressed);
+}
+
+.unity-button:disabled {
+    opacity: 0.4;
+}
+
+.unity-text-field {
+    margin: 0;
+    padding: 0;
+}
+
+.unity-base-text-field__input {
+    height: 28px;
+    padding: 0 9px;
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 8px;
+    background-color: var(--well);
+    color: var(--text);
+}
+
+.unity-base-text-field__input:focus {
+    border-color: var(--paper);
+}
+
+.unity-progress-bar__background {
+    border-width: 0;
+    border-radius: 3px;
+    background-color: var(--line);
+}
+
+.unity-progress-bar__progress {
+    border-radius: 3px;
+    background-color: var(--paper);
+}
+
+/* The bar at the side of a list too long for its strip: narrow, with no arrows */
+
+.unity-scroller--vertical {
+    width: 8px;
+    margin-left: 4px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.unity-scroller--vertical > .unity-scroller__low-button,
+.unity-scroller--vertical > .unity-scroller__high-button {
+    display: none;
+}
+
+.unity-scroller--vertical > .unity-scroller__slider {
+    width: 8px;
+    margin: 0;
+}
+
+.unity-scroller--vertical .unity-base-slider__tracker {
+    border-width: 0;
+    border-radius: 4px;
+    background-color: var(--well);
+}
+
+.unity-scroller--vertical .unity-base-slider__dragger {
+    left: 0;
+    width: 8px;
+    border-width: 0;
+    border-radius: 4px;
+    background-color: var(--edge);
+}
+
+.unity-scroller--vertical .unity-base-slider__dragger-border {
+    display: none;
+}
+
+/* The ground behind everything: the four colours run into each other across the window (Backdrop.cs) */
+
+.backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Small things used everywhere */
+
+.hidden {
+    display: none;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.row--baseline {
+    align-items: flex-end;
+    margin-bottom: 4px;
+}
+
+.last.unity-button {
+    margin-right: 0;
+}
+
+.caption {
+    margin-bottom: 4px;
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.caption--inline {
+    margin: 0 8px 0 0;
+}
+
+/*
+ * A caption with a note beside it, such as the tempo's when it is outside the units' range. The note is out
+ * of the layout, so that it never widens its column and moves what is beside it.
+ */
+.caption-row {
+    align-self: flex-start;
+    margin-bottom: 4px;
+}
+
+.caption-row > .caption {
+    margin-bottom: 0;
+}
+
+.caption--note {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    margin-left: 8px;
+    white-space: nowrap;
+    color: var(--note);
+}
+
+.hint {
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.hint--after {
+    margin-left: 6px;
+}
+
+.dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin: 0 6px;
+    border-radius: 4px;
+}
+
+.unity-button.primary {
+    padding: 0 20px;
+    border-color: var(--paper);
+    background-color: var(--paper);
+    color: var(--ink);
+    -unity-font-definition: var(--font-bold);
+}
+
+.unity-button.primary:hover {
+    border-color: var(--paper-hover);
+    background-color: var(--paper-hover);
+}
+
+/* A button that stays down: Click, Loop pattern, Drag moves the grid, and the choice that is on in a row of them. */
+
+.unity-button.on {
+    border-color: var(--paper);
+    background-color: var(--paper);
+    color: var(--ink);
+    -unity-font-definition: var(--font-semibold);
+}
+
+.unity-button.on:hover {
+    border-color: var(--paper-hover);
+    background-color: var(--paper-hover);
+}
+
+.unity-button.small {
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 7px;
+    background-color: rgba(0, 0, 0, 0);
+    font-size: 12px;
+}
+
+.unity-button.small:hover {
+    background-color: var(--selected);
+}
+
+.unity-button.square {
+    width: 30px;
+    padding: 0;
+}
+
+/* The single guillemets are small in this face, so the two buttons that are one show it larger */
+
+.unity-button.chevron {
+    padding-bottom: 3px;
+    font-size: 20px;
+}
+
+.unity-button.square--joined {
+    margin-right: 2px;
+}
+
+.on > .unity-label {
+    color: var(--ink);
+}
+
+/* A button that stays down is in a heavier face when it is on, and a little wider for it. These
+   three have others beside them, so each is given the room of its wider state and nothing moves:
+   Drag grid going on used to push Move bar line along by most of a pixel. */
+#click {
+    width: 58px;
+    padding: 0;
+}
+
+#loop {
+    width: 108px;
+    padding: 0;
+}
+
+.panels #dragGrid {
+    width: 80px;
+    padding: 0;
+}
+
+/* Play and Pause take the same room, so the row does not shift when one becomes the other. */
+.unity-button.play {
+    width: 72px;
+    padding: 0;
+    border-color: var(--text);
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: var(--font-semibold);
+}
+
+.unity-button.play:hover {
+    background-color: var(--selected);
+}
+
+/* A row of choices of which one is on */
+
+.seg {
+    flex-direction: row;
+    flex-shrink: 0;
+    padding: 2px;
+    border-radius: 9px;
+    background-color: var(--ink);
+}
+
+.unity-button.seg__item {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    margin: 0;
+    padding: 0 8px;
+    border-width: 0;
+    border-radius: 7px;
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.unity-button.seg__item:hover {
+    color: var(--text);
+}
+
+.unity-button.seg__item.on {
+    background-color: var(--selected);
+    color: rgb(255, 255, 255);
+    -unity-font-definition: var(--font-semibold);
+}
+
+.seg__item > .unity-label {
+    color: var(--soft);
+}
+
+.seg__item.on > .unity-label {
+    color: rgb(255, 255, 255);
+}
+
+.seg__item > .dot {
+    margin: 0 6px 0 0;
+}
+
+/* The bar along the top */
+
+.header {
+    flex-shrink: 0;
+    background-color: var(--surface-clear);
+}
+
+.header__row {
+    flex-direction: row;
+    align-items: center;
+    height: 44px;
+    padding: 0 8px 0 12px;
+}
+
+.mark-host {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+}
+
+.mark {
+    flex-grow: 1;
+}
+
+.wordmark {
+    font-size: 21px;
+    letter-spacing: -0.4px;
+    -unity-font-definition: var(--font-bold);
+}
+
+/* The app's version, from the Project Settings, small beside its name */
+.version {
+    margin: 7px 0 0 7px;
+    color: var(--faint);
+    font-size: 11px;
+    -unity-font-definition: var(--mono);
+}
+
+.steps {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-left: 16px;
+    padding: 2px;
+    border-radius: 9px;
+    background-color: var(--well);
+}
+
+.unity-button.steps__item {
+    height: 26px;
+    margin: 0;
+    padding: 0 12px;
+    border-width: 0;
+    border-radius: 7px;
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--soft);
+}
+
+.unity-button.steps__item:hover {
+    color: rgb(255, 255, 255);
+}
+
+.unity-button.steps__item.on {
+    background-color: var(--selected);
+    color: rgb(255, 255, 255);
+    -unity-font-definition: var(--font-semibold);
+}
+
+.unity-button.steps__item:disabled {
+    opacity: 1;
+    color: var(--faint);
+}
+
+/* Analyse, Analyse again and Analysing take the same room, so the bar does not shift when one becomes another. */
+#analyse {
+    min-width: 132px;
+}
+
+.name {
+    width: 180px;
+    margin-right: 14px;
+}
+
+.name .unity-base-text-field__input {
+    height: 30px;
+}
+
+.memory__text {
+    margin-right: 10px;
+    font-size: 12px;
+    -unity-font-definition: var(--mono);
+}
+
+.memory__text.memory--high {
+    color: var(--note);
+}
+
+.memory__text.memory--over {
+    color: var(--bad);
+}
+
+.memory__bar {
+    flex-direction: row;
+    flex-shrink: 0;
+    width: 140px;
+    height: 6px;
+    margin-right: 14px;
+    border-radius: 3px;
+    background-color: var(--line);
+    overflow: hidden;
+}
+
+.memory__part {
+    flex-shrink: 0;
+    height: 6px;
+}
+
+.thread {
+    flex-shrink: 0;
+    height: 1px;
+}
+
+.thread--1 { background-color: var(--out-1); }
+.thread--2 { background-color: var(--out-2); }
+.thread--3 { background-color: var(--out-3); }
+.thread--4 { background-color: var(--out-4); }
+
+/* Screens */
+
+.screen {
+    flex-grow: 1;
+    padding: 12px 16px 10px 16px;
+}
+
+.toolbar {
+    height: 32px;
+    margin-bottom: 12px;
+}
+
+.panel {
+    padding: 12px;
+    border-radius: 10px;
+    background-color: var(--surface-clear);
+}
+
+.panel__title {
+    margin-right: 8px;
+    font-size: 14px;
+    -unity-font-definition: var(--font-bold);
+}
+
+.panel__title--alone {
+    height: 20px;
+    margin-bottom: 8px;
+}
+
+.panel__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 20px;
+    margin-bottom: 8px;
+}
+
+/* What follows a panel's title, all of it quiet: "from", a stem's dot and its name, and what the taps gave */
+.panel__head > .hint {
+    margin-right: 4px;
+}
+
+.panel__head > .dot {
+    margin: 0 5px 0 1px;
+}
+
+#tapCount {
+    margin-left: 8px;
+}
+
+/* Source screen */
+
+/* What the four strips are, said once above them */
+
+.outputs__title {
+    margin-left: 16px;
+    margin-right: 10px;
+}
+
+.outputs-host {
+    flex-shrink: 0;
+    margin-right: 12px;
+}
+
+#sourceInfo {
+    flex-shrink: 0;
+    margin-left: 16px;
+}
+
+.strips {
+    flex-direction: row;
+    flex-grow: 1;
+    margin-bottom: 12px;
+}
+
+.strip {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin-right: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background-color: var(--surface-clear);
+}
+
+.strip--last {
+    margin-right: 0;
+}
+
+.strip__header {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 30px;
+    margin-bottom: 10px;
+}
+
+.badge {
+    flex-shrink: 0;
+    min-width: 56px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    color: var(--ink);
+    font-size: 16px;
+    -unity-font-definition: var(--font-bold);
+    -unity-text-align: middle-center;
+}
+
+.badge--idle {
+    background-color: var(--raised);
+    color: var(--quiet);
+}
+
+.strip__state {
+    flex-grow: 1;
+    color: var(--quiet);
+    font-size: 12px;
+    -unity-font-definition: var(--mono);
+    -unity-text-align: middle-right;
+}
+
+.strip > .seg {
+    margin-bottom: 10px;
+}
+
+.strip__body {
+    flex-grow: 1;
+}
+
+.strip__body .unity-scroll-view__content-container {
+    flex-grow: 1;
+    min-height: 100%;
+}
+
+.well {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+    padding: 8px 8px 0 8px;
+    border-width: 1px;
+    border-color: var(--line);
+    border-radius: 8px;
+}
+
+.well__caption {
+    margin-bottom: 8px;
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.file {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: var(--raised);
+}
+
+/* A few words beside the pointer: the whole of a name that does not fit where it is shown. */
+.tip {
+    position: absolute;
+    padding: 5px 9px;
+    border-radius: 7px;
+    background-color: var(--paper);
+    color: var(--ink);
+    font-size: 12px;
+    white-space: pre;
+}
+
+/* A card that is being dragged to another strip, its name beside the pointer, and the strip or output it would land on */
+
+.file--dragging {
+    opacity: 0.4;
+}
+
+.drag-ghost {
+    position: absolute;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 13px;
+    -unity-font-definition: var(--font-semibold);
+    -unity-text-align: middle-center;
+}
+
+.strip--drop {
+    background-color: var(--raised);
+}
+
+.well--drop {
+    border-color: var(--paper);
+}
+
+.file__row {
+    flex-direction: row;
+    align-items: center;
+    height: 24px;
+    margin-bottom: 6px;
+}
+
+.file__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -unity-font-definition: var(--font-semibold);
+}
+
+.file__details {
+    margin-bottom: 8px;
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.mini {
+    flex-shrink: 0;
+    height: 56px;
+    border-radius: 6px;
+    background-color: var(--well);
+    overflow: hidden;
+}
+
+.file .unity-button {
+    height: 22px;
+    margin: 0 0 0 6px;
+    padding: 0 8px;
+    border-radius: 7px;
+    background-color: var(--surface);
+    font-size: 12px;
+}
+
+.file .unity-button:hover {
+    background-color: var(--selected);
+}
+
+.file .unity-button.icon {
+    width: 22px;
+    padding: 0;
+}
+
+.unity-button.add {
+    height: 28px;
+    margin: 0 0 8px 0;
+    border-color: var(--line);
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--soft);
+}
+
+.unity-button.add:hover {
+    border-color: var(--edge);
+    background-color: var(--raised);
+}
+
+.unity-button.add--fill {
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    min-height: 44px;
+    margin-bottom: 0;
+}
+
+.add__waiting {
+    margin-bottom: 8px;
+    color: var(--faint);
+    font-size: 18px;
+    -unity-font-definition: var(--font-bold);
+}
+
+.add__title {
+    color: var(--soft);
+}
+
+.add__hint {
+    margin-top: 4px;
+    color: var(--quiet);
+    font-size: 12px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.error {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: var(--bad-ground);
+    color: var(--bad);
+    white-space: normal;
+}
+
+.summary {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 64px;
+    padding: 0 16px;
+}
+
+/* The two units a package is for, one over the other */
+.summary__units {
+    align-items: center;
+    margin-right: 36px;
+}
+
+.stat {
+    margin-right: 36px;
+}
+
+.stat__value {
+    font-size: 18px;
+    -unity-font-definition: var(--mono);
+}
+
+.stat__caption {
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.summary__message {
+    max-width: 580px;
+    color: var(--quiet);
+    font-size: 12px;
+    white-space: normal;
+    -unity-text-align: middle-right;
+}
+
+.summary__message.summary__message--bad {
+    color: var(--bad);
+}
+
+/* Align screen */
+
+.align {
+    flex-grow: 1;
+}
+
+.toolbar--align {
+    height: 34px;
+    margin-bottom: 8px;
+}
+
+.position {
+    min-width: 150px;
+    margin: 0 8px 0 4px;
+    -unity-font-definition: var(--mono);
+}
+
+.show-host .seg, .outputs-host .seg {
+    background-color: var(--well);
+}
+
+.show-host .unity-button.seg__item, .outputs-host .unity-button.seg__item {
+    flex-grow: 0;
+    flex-basis: auto;
+    height: 26px;
+    padding: 0 10px;
+    font-size: 13px;
+}
+
+/* A strip that is switched off: its dot goes with it */
+.show-host .seg__item > .dot {
+    opacity: 0.35;
+}
+
+.show-host .seg__item.on > .dot {
+    opacity: 1;
+}
+
+.waveform-host {
+    flex-grow: 1;
+    min-height: 140px;
+}
+
+/* The two views draw their own text, and read the faces for it from here (Faces.cs) */
+
+.waveform, .songstrip {
+    --drawn-text: var(--font);
+    --drawn-strong: var(--font-semibold);
+    --drawn-figures: var(--mono);
+}
+
+.waveform {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.waveform__playhead {
+    position: absolute;
+    top: 46px;
+    bottom: 16px;
+    width: 1px;
+    background-color: rgb(255, 255, 255);
+}
+
+.waveform__scenes {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    flex-direction: row;
+}
+
+.unity-button.waveform__scene {
+    height: 16px;
+    margin: 0 0 0 4px;
+    padding: 0 7px;
+    border-width: 0;
+    border-radius: 4px;
+    background-color: var(--edge);
+    font-size: 11px;
+}
+
+.unity-button.waveform__scene:hover {
+    background-color: var(--pressed);
+}
+
+.strip-host {
+    flex-shrink: 0;
+    height: 58px;
+    margin-top: 8px;
+}
+
+.songstrip {
+    flex-grow: 1;
+}
+
+.songstrip__playhead {
+    position: absolute;
+    top: 14px;
+    bottom: 0;
+    width: 1px;
+    background-color: rgb(255, 255, 255);
+}
+
+/* One line that is always there, so that what it says coming and going moves nothing above it */
+.warnings {
+    flex-shrink: 0;
+    height: 16px;
+    margin-top: 8px;
+    overflow: hidden;
+    color: var(--note);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Why the song cannot be exported as it is */
+.warnings.warnings--bad {
+    color: var(--bad);
+}
+
+.panels {
+    flex-direction: row;
+    flex-shrink: 0;
+    height: 208px;
+    margin-top: 10px;
+}
+
+.panel--grid {
+    flex-shrink: 0;
+    width: 560px;
+    margin-right: 12px;
+}
+
+.panel--patterns {
+    flex-grow: 1;
+}
+
+.panels .unity-button {
+    height: 28px;
+    margin-right: 4px;
+    padding: 0 10px;
+}
+
+.panels .unity-button.square {
+    width: 28px;
+    padding: 0;
+}
+
+.panels .unity-button.small {
+    height: 22px;
+}
+
+.panels .unity-button.wide {
+    margin-right: 0;
+}
+
+.panels .unity-button.seg__item {
+    margin-right: 0;
+}
+
+.groups {
+    flex-direction: row;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+/* The Timing panel: tempo over fine tuning on the left, and the bar line's steps beside them. */
+.timing {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.timing__left {
+    flex-shrink: 0;
+    margin-right: 16px;
+}
+
+/* Move bar line: a row for each step, with Earlier down one side and Later down the other, and the title over the middle of them. */
+.barline {
+    flex-shrink: 0;
+}
+
+.barline__title {
+    -unity-text-align: middle-center;
+}
+
+.barline__row {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-bottom: 3px;
+}
+
+.barline__row--head {
+    margin-bottom: 2px;
+}
+
+.barline__side {
+    width: 46px;
+    color: var(--quiet);
+    font-size: 11px;
+    -unity-text-align: middle-center;
+}
+
+.barline__step {
+    width: 60px;
+    color: var(--soft);
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}
+
+/* Square, the size of the other buttons of the panel, in the middle of its column */
+.panels .unity-button.barline__arrow {
+    width: 28px;
+    height: 28px;
+    margin: 0 9px;
+    padding: 0;
+}
+
+.groups--second {
+    margin-top: 8px;
+}
+
+/* A group under another, as the three of the Patterns panel are */
+.group--under {
+    margin-top: 8px;
+}
+
+.group {
+    margin-right: 20px;
+}
+
+.row--tight {
+    margin-bottom: 0;
+}
+
+.value {
+    min-width: 80px;
+    margin-right: 4px;
+    -unity-text-align: middle-center;
+}
+
+.value--short {
+    min-width: 54px;
+    -unity-font-definition: var(--mono);
+}
+
+/* Each takes the same room whatever it says, so the arrows either side of it stay put. */
+.value--start {
+    width: 130px;
+}
+
+.value--leadin {
+    width: 164px;
+}
+
+.number {
+    width: 86px;
+    margin-right: 4px;
+    -unity-font-definition: var(--mono);
+}
+
+.number--short {
+    width: 60px;
+}
+
+/* How long the lead-in runs, beside the caption of the row that sets where it starts */
+.leadin__caption {
+    align-items: flex-start;
+}
+
+.leadin__length {
+    margin-left: 8px;
+    color: var(--faint);
+}
+
+/* The Patterns panel: its controls at the left, and at the right what the selected pattern is */
+.patterns {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+/* Half the panel each */
+.patterns__controls {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+}
+
+.readout {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    padding-left: 14px;
+    border-left-width: 1px;
+    border-color: var(--edge);
+}
+
+.readout__name {
+    margin-bottom: 5px;
+    font-size: 13px;
+    -unity-font-definition: var(--font-semibold);
+}
+
+.readout__row {
+    flex-direction: row;
+    align-items: center;
+    height: 18px;
+}
+
+.readout__caption {
+    width: 58px;
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.readout__value {
+    color: var(--soft);
+    font-size: 12px;
+}
+
+/* The selected pattern's length between arrows that make it a bar shorter or longer, as Start song at is */
+.readout__length {
+    height: 28px;
+    margin-bottom: 6px;
+}
+
+/* The same room for "1 bar" as for "4 bars", so the arrow at its right stays put */
+.value--length {
+    width: 72px;
+}
+
+/* The last pattern runs to the end of the song, so its length is greyed as its arrows are */
+.length--fixed {
+    opacity: 0.4;
+}
+
+/* The lead-in's length, which has no arrows and is longer, from the left */
+.value--free {
+    width: auto;
+    -unity-text-align: middle-left;
+}
+
+.figure {
+    margin-right: 8px;
+    font-size: 22px;
+    -unity-font-definition: var(--mono);
+}
+
+/* Export page: a scene's pads as the unit shows them, and what the package is set to */
+
+.export {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.export__pads {
+    flex-grow: 1;
+    margin-right: 12px;
+}
+
+.export__side {
+    flex-shrink: 0;
+    width: 430px;
+}
+
+.export__options {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+}
+
+.export__package {
+    flex-grow: 1;
+}
+
+.export .unity-button.square {
+    width: 28px;
+    height: 28px;
+    margin-right: 4px;
+    padding: 0;
+}
+
+.export .unity-button.small {
+    height: 22px;
+}
+
+.value--scene {
+    width: 110px;
+}
+
+.padgrid {
+    flex-grow: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: stretch;
+    margin: 4px -4px -4px -4px;
+}
+
+/* A pad takes a quarter of the grid each way; its edge and ground are its strip's colour, set in code.
+   It is a little under a quarter wide and grows to fill the row, because four of exactly 25% can
+   round to a pixel more than the row at some window sizes, and the fourth then wraps to a row of its own. */
+.pad {
+    width: 24%;
+    flex-grow: 1;
+    height: 25%;
+    padding: 4px;
+}
+
+.pad__face {
+    flex-grow: 1;
+    padding: 10px 12px;
+    border-width: 1px;
+    border-color: var(--edge);
+    border-radius: 10px;
+    background-color: var(--well);
+}
+
+.pad__top {
+    flex-direction: row;
+    align-items: center;
+}
+
+.pad__name {
+    flex-grow: 1;
+    overflow: hidden;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -unity-font-definition: var(--font-bold);
+}
+
+.pad__track {
+    color: var(--quiet);
+    font-size: 12px;
+    -unity-font-definition: var(--mono);
+}
+
+.pad__pattern {
+    margin-top: 2px;
+    color: var(--soft);
+    font-size: 12px;
+}
+
+.pad__wave {
+    flex-grow: 1;
+    margin: 6px 0 8px 0;
+}
+
+.pad__keys {
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+/* A pad's play sign, at the right of its two buttons: a black triangle, and a square to stop it while it sounds */
+.pad__play {
+    width: 22px;
+    height: 24px;
+    margin-right: 8px;
+}
+
+/* Stops every pad. It keeps its room when nothing sounds, so the scene's arrows stay where they are. */
+.export .unity-button.pads__stop {
+    height: 28px;
+    margin-right: 16px;
+    padding: 0 14px;
+    border-color: var(--paper);
+    background-color: var(--paper);
+    color: var(--ink);
+    -unity-font-definition: var(--font-semibold);
+}
+
+.export .unity-button.pads__stop--quiet {
+    visibility: hidden;
+}
+
+.unity-button.pad__key {
+    height: 24px;
+    min-width: 44px;
+    margin: 0 6px 0 0;
+    padding: 0 10px;
+    border-radius: 7px;
+    background-color: var(--ink);
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.unity-button.pad__key:hover {
+    color: var(--text);
+}
+
+.unity-button.pad__key.on {
+    border-color: var(--paper);
+    background-color: var(--paper);
+    color: var(--ink);
+    -unity-font-definition: var(--font-semibold);
+}
+
+.pad--empty > .pad__face {
+    border-color: var(--line);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.pad--empty .pad__name,
+.pad--empty .pad__pattern {
+    color: var(--faint);
+    -unity-font-definition: var(--font);
+}
+
+/* A row for each stem: its name, then its choke group and its loop, in two columns under their headings */
+.stemrow {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 28px;
+    margin-bottom: 4px;
+}
+
+.stemrow--head {
+    height: 16px;
+}
+
+.stemrow--all {
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+
+.stemrow__name {
+    flex-direction: row;
+    align-items: center;
+    width: 96px;
+}
+
+.stemrow__name > .dot {
+    margin: 0 8px 0 0;
+}
+
+.stemrow__cell {
+    width: 150px;
+    margin-right: 12px;
+}
+
+.stemrow__cell > .seg {
+    width: 150px;
+}
+
+.stemrow--head .caption {
+    margin-bottom: 0;
+}
+
+.group--export {
+    margin: 12px 0 0 0;
+}
+
+.export__choice > .seg {
+    width: 312px;
+}
+
+/* Two switches side by side, each under its caption and as wide as a switch of the rows above */
+.export__pair {
+    align-items: flex-start;
+}
+
+.export__pair > .group--export {
+    margin-right: 12px;
+}
+
+.export__switch > .seg {
+    width: 150px;
+}
+
+/* A pad's choke is on because it loops with the arranger on, and cannot be taken off here */
+.unity-button.pad__key.on:disabled {
+    opacity: 0.55;
+}
+
+.export__facts {
+    white-space: normal;
+}
+
+.export__notes {
+    margin-top: 6px;
+    color: var(--note);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.export__notes.warnings--bad {
+    color: var(--bad);
+}
+
+.export__written {
+    margin-top: 8px;
+    color: var(--soft);
+    font-size: 12px;
+    white-space: normal;
+}
+
+/* The bar along the bottom */
+
+.status {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 28px;
+    padding: 0 16px;
+    border-top-width: 1px;
+    border-top-color: var(--line);
+    background-color: var(--well-clear);
+}
+
+.status__text {
+    flex-grow: 1;
+    color: var(--quiet);
+    font-size: 12px;
+}
+
+.status__text--busy {
+    color: var(--text);
+}
+
+/* Four dots that light up in turn while something is running (StatusBarUIManager) */
+.busy {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.busy__dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    margin-right: 4px;
+    border-radius: 4px;
+}
+
+.status__progress {
+    width: 220px;
+    margin-right: 10px;
+}
+
+.status__keys {
+    color: var(--quiet);
+    font-size: 11px;
+    -unity-font-definition: var(--mono);
+}

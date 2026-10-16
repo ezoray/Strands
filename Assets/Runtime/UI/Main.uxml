@@ -1,0 +1,282 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="Main.uss" />
+  <ui:VisualElement name="root" class="root">
+
+    <ui:VisualElement class="header">
+      <ui:VisualElement class="header__row">
+        <ui:VisualElement name="markHost" class="mark-host" />
+        <ui:Label text="strands" class="wordmark" />
+        <ui:Label name="version" class="version" />
+        <ui:VisualElement class="steps">
+          <ui:Button name="stepSource" text="1 Source" class="steps__item" />
+          <ui:Button name="stepAlign" text="2 Analysis" class="steps__item" />
+          <ui:Button name="stepExport" text="3 Export" class="steps__item" />
+        </ui:VisualElement>
+        <ui:VisualElement class="spacer" />
+        <ui:Label text="Project name" class="caption caption--inline" />
+        <ui:TextField name="projectName" max-length="24" class="name" />
+        <ui:Label text="Memory" class="caption caption--inline" />
+        <ui:Label name="memoryText" class="memory__text" />
+        <ui:VisualElement name="memoryBar" class="memory__bar" />
+        <ui:Button name="analyse" text="Analyse" class="primary" />
+        <ui:Button name="export" text="Export" class="primary hidden" />
+      </ui:VisualElement>
+      <ui:VisualElement class="thread thread--1" />
+      <ui:VisualElement class="thread thread--2" />
+      <ui:VisualElement class="thread thread--3" />
+      <ui:VisualElement class="thread thread--4" />
+    </ui:VisualElement>
+
+    <ui:VisualElement name="sourceScreen" class="screen">
+      <ui:VisualElement class="row toolbar">
+        <ui:Button name="addFiles" text="Add files" />
+        <ui:Button name="addFolder" text="Add folder" />
+        <ui:Button name="clearFiles" text="Clear" />
+        <ui:Label text="Output channels" class="panel__title outputs__title" />
+        <ui:VisualElement name="outputsHost" class="outputs-host" />
+        <ui:VisualElement class="spacer" />
+        <ui:Label name="sourceInfo" class="hint" />
+      </ui:VisualElement>
+      <ui:VisualElement name="strips" class="strips" />
+      <ui:Label name="sourceError" class="error hidden" />
+      <ui:VisualElement class="panel summary">
+        <ui:VisualElement class="summary__units">
+          <ui:Label text="SP-16" class="panel__title" />
+          <ui:Label text="DJS" class="panel__title" />
+        </ui:VisualElement>
+        <ui:VisualElement class="stat">
+          <ui:Label name="statTracks" class="stat__value" />
+          <ui:Label name="statTracksCaption" text="tracks per pattern" class="stat__caption" />
+        </ui:VisualElement>
+        <ui:VisualElement class="stat">
+          <ui:Label name="statPatterns" class="stat__value" />
+          <ui:Label name="statPatternsCaption" text="patterns per scene" class="stat__caption" />
+        </ui:VisualElement>
+        <ui:VisualElement class="stat">
+          <ui:Label name="statBars" class="stat__value" />
+          <ui:Label text="bars of room" class="stat__caption" />
+        </ui:VisualElement>
+        <ui:VisualElement class="stat">
+          <ui:Label name="statLength" class="stat__value" />
+          <ui:Label text="long" class="stat__caption" />
+        </ui:VisualElement>
+        <ui:VisualElement class="spacer" />
+        <ui:Label name="sourceSummary" class="summary__message" />
+      </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:VisualElement name="alignScreen" class="screen hidden">
+      <ui:VisualElement name="alignControls" class="align">
+        <ui:VisualElement class="row toolbar toolbar--align">
+          <ui:Button name="play" text="Play" class="play" />
+          <ui:Label name="position" class="position" />
+          <ui:Button name="click" text="Click" class="on" />
+          <ui:Button name="loop" text="Loop pattern" />
+          <ui:VisualElement class="spacer" />
+          <ui:Label name="showCaption" text="Show" class="caption caption--inline" />
+          <ui:VisualElement name="showHost" class="show-host" />
+          <ui:VisualElement class="spacer" />
+          <ui:Button name="zoomOut" text="−" class="square square--joined" />
+          <ui:Button name="zoomIn" text="+" class="square square--joined" />
+          <ui:Button name="zoomFit" text="Fit scene" class="last" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="waveformHost" class="waveform-host" />
+        <ui:VisualElement name="stripHost" class="strip-host" />
+        <ui:Label name="warnings" class="warnings" />
+
+        <ui:VisualElement class="panels">
+          <ui:VisualElement class="panel panel--grid">
+            <ui:VisualElement class="panel__head">
+              <ui:Label text="Timing" class="panel__title" />
+              <ui:Label name="gridFromCaption" text="from" class="hint" />
+              <ui:VisualElement name="gridFromDot" class="dot" />
+              <ui:Label name="gridFrom" class="hint" />
+              <ui:Label name="tapCount" class="hint" />
+              <ui:VisualElement class="spacer" />
+              <ui:Button name="reset" text="Reset analysis" class="small last" />
+            </ui:VisualElement>
+            <ui:VisualElement class="timing">
+              <ui:VisualElement class="timing__left">
+                <ui:VisualElement class="group">
+                  <ui:VisualElement class="caption-row">
+                    <ui:Label text="Tempo (BPM)" class="caption" />
+                    <ui:Label name="tempoWarning" class="caption caption--note" />
+                  </ui:VisualElement>
+                  <ui:VisualElement class="row row--tight">
+                    <ui:TextField name="tempo" class="number" />
+                    <ui:Button name="tempoHalf" text="÷2" />
+                    <ui:Button name="tempoDouble" text="×2" />
+                    <ui:Button name="refit" text="Refit" />
+                    <ui:Button name="tap" text="Tap" />
+                  </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="groups groups--second">
+                  <ui:VisualElement class="group">
+                    <ui:Label text="Fine tuning" class="caption" />
+                    <ui:VisualElement class="row row--tight">
+                      <ui:Button name="nudgeBack10" text="−10" />
+                      <ui:Button name="nudgeBack1" text="−1" />
+                      <ui:Label name="nudge" class="value value--short" />
+                      <ui:Button name="nudgeOn1" text="+1" />
+                      <ui:Button name="nudgeOn10" text="+10" />
+                    </ui:VisualElement>
+                  </ui:VisualElement>
+                  <ui:Button name="dragGrid" text="Drag grid" />
+                </ui:VisualElement>
+              </ui:VisualElement>
+              <ui:VisualElement class="barline">
+                <ui:Label text="Move bar line" class="caption barline__title" />
+                <ui:VisualElement class="barline__row barline__row--head">
+                  <ui:Label text="Earlier" class="barline__side" />
+                  <ui:VisualElement class="barline__step" />
+                  <ui:Label text="Later" class="barline__side" />
+                </ui:VisualElement>
+                <ui:VisualElement class="barline__row">
+                  <ui:Button name="barEarlier1" text="←" class="barline__arrow" />
+                  <ui:Label text="1 beat" class="barline__step" />
+                  <ui:Button name="barLater1" text="→" class="barline__arrow" />
+                </ui:VisualElement>
+                <ui:VisualElement class="barline__row">
+                  <ui:Button name="barEarlierHalf" text="←" class="barline__arrow" />
+                  <ui:Label text="½ beat" class="barline__step" />
+                  <ui:Button name="barLaterHalf" text="→" class="barline__arrow" />
+                </ui:VisualElement>
+                <ui:VisualElement class="barline__row">
+                  <ui:Button name="barEarlierQuarter" text="←" class="barline__arrow" />
+                  <ui:Label text="¼ beat" class="barline__step" />
+                  <ui:Button name="barLaterQuarter" text="→" class="barline__arrow" />
+                </ui:VisualElement>
+              </ui:VisualElement>
+            </ui:VisualElement>
+          </ui:VisualElement>
+
+          <ui:VisualElement class="panel panel--patterns">
+            <ui:VisualElement class="panel__head">
+              <ui:Label text="Patterns" class="panel__title" />
+              <ui:Label name="patternsCount" class="hint" />
+            </ui:VisualElement>
+            <ui:VisualElement class="patterns">
+            <ui:VisualElement class="patterns__controls">
+            <ui:VisualElement class="group">
+              <ui:Label text="Bar line and pattern start" class="caption" />
+              <ui:VisualElement class="row row--tight">
+                <ui:Button name="patternStartHere" text="Start pattern at playhead" />
+              </ui:VisualElement>
+            </ui:VisualElement>
+              <ui:VisualElement class="group group--under">
+                <ui:Label text="Start song at" class="caption" />
+                <ui:VisualElement class="row row--tight">
+                  <ui:Button name="startEarlier" text="←" class="square" />
+                  <ui:Label name="startAt" class="value value--start" />
+                  <ui:Button name="startLater" text="→" class="square" />
+                </ui:VisualElement>
+              </ui:VisualElement>
+              <ui:VisualElement class="group group--under">
+                <ui:VisualElement class="row leadin__caption">
+                  <ui:Label text="Adjust lead-in start" class="caption" />
+                  <ui:Label name="leadInLength" class="caption leadin__length" />
+                </ui:VisualElement>
+                <ui:VisualElement class="row row--tight">
+                  <ui:Button name="beatEarlier" text="←" class="square" />
+                  <ui:Label name="leadIn" class="value value--leadin" />
+                  <ui:Button name="beatLater" text="→" class="square" />
+                </ui:VisualElement>
+              </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="readout">
+              <ui:Label text="Selected" class="caption" />
+              <ui:Label name="selectedName" class="readout__name" />
+              <ui:Label name="lengthCaption" text="Pattern length" class="caption" />
+              <ui:VisualElement class="row row--tight readout__length">
+                <ui:Button name="lengthShorter" text="←" class="square" />
+                <ui:Label name="selectedLength" class="value value--length" />
+                <ui:Button name="lengthLonger" text="→" class="square" />
+              </ui:VisualElement>
+              <ui:VisualElement class="readout__row">
+                <ui:Label text="Bars" class="readout__caption" />
+                <ui:Label name="selectedBars" class="readout__value" />
+              </ui:VisualElement>
+              <ui:VisualElement class="readout__row">
+                <ui:Label text="Time" class="readout__caption" />
+                <ui:Label name="selectedTime" class="readout__value" />
+              </ui:VisualElement>
+              <ui:VisualElement class="readout__row">
+                <ui:Label text="Hits" class="readout__caption" />
+                <ui:Label name="selectedHits" class="readout__value" />
+              </ui:VisualElement>
+              <ui:VisualElement class="readout__row">
+                <ui:Label text="Samples" class="readout__caption" />
+                <ui:Label name="selectedSamples" class="readout__value" />
+              </ui:VisualElement>
+            </ui:VisualElement>
+            </ui:VisualElement>
+          </ui:VisualElement>
+        </ui:VisualElement>
+      </ui:VisualElement>
+
+    </ui:VisualElement>
+
+    <ui:VisualElement name="exportScreen" class="screen hidden">
+      <ui:VisualElement class="export">
+        <ui:VisualElement class="panel export__pads">
+          <ui:VisualElement class="panel__head">
+            <ui:Label text="Pads" class="panel__title" />
+            <ui:Label name="padsCount" class="hint" />
+            <ui:VisualElement class="spacer" />
+            <ui:Button name="stopPads" text="Stop" class="pads__stop pads__stop--quiet" />
+            <ui:Button name="scenePrevious" text="←" class="square" />
+            <ui:Label name="sceneName" class="value value--scene" />
+            <ui:Button name="sceneNext" text="→" class="square last" />
+          </ui:VisualElement>
+          <ui:VisualElement name="padGrid" class="padgrid" />
+        </ui:VisualElement>
+        <ui:VisualElement class="export__side">
+          <ui:VisualElement class="panel export__options">
+            <ui:VisualElement class="panel__head">
+              <ui:Label text="Options" class="panel__title" />
+            </ui:VisualElement>
+            <ui:VisualElement name="stemRows" class="stemrows" />
+            <ui:VisualElement class="group group--export">
+              <ui:Label text="Time stretch" class="caption" />
+              <ui:VisualElement name="stretchHost" class="export__choice" />
+            </ui:VisualElement>
+            <ui:VisualElement class="row export__pair">
+              <ui:VisualElement class="group group--export">
+                <ui:Label text="Arrangement" class="caption" />
+                <ui:VisualElement name="arrangementHost" class="export__switch" />
+              </ui:VisualElement>
+              <ui:VisualElement class="group group--export">
+                <ui:Label text="Add tempo to arrangement" class="caption" />
+                <ui:VisualElement name="arrangementTempoHost" class="export__switch" />
+              </ui:VisualElement>
+            </ui:VisualElement>
+          </ui:VisualElement>
+          <ui:VisualElement class="panel export__package">
+            <ui:VisualElement class="panel__head">
+              <ui:Label text="Package" class="panel__title" />
+              <ui:VisualElement class="spacer" />
+              <ui:Button name="showFolder" text="Show in folder" class="small last hidden" />
+            </ui:VisualElement>
+            <ui:Label name="packageFacts" class="export__facts" />
+            <ui:Label name="packageNotes" class="export__notes" />
+            <ui:Label name="packageWritten" class="export__written" />
+          </ui:VisualElement>
+        </ui:VisualElement>
+      </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:VisualElement class="status">
+      <ui:VisualElement name="statusBusy" class="busy hidden">
+        <ui:VisualElement class="busy__dot thread--1" />
+        <ui:VisualElement class="busy__dot thread--2" />
+        <ui:VisualElement class="busy__dot thread--3" />
+        <ui:VisualElement class="busy__dot thread--4" />
+      </ui:VisualElement>
+      <ui:Label name="statusText" class="status__text" />
+      <ui:ProgressBar name="statusProgress" class="status__progress hidden" />
+      <ui:Button name="statusCancel" text="Cancel" class="small hidden" />
+      <ui:Label name="shortcuts" class="status__keys" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

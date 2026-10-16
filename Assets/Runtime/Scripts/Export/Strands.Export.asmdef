@@ -1,0 +1,17 @@
+{
+    "name": "Strands.Export",
+    "rootNamespace": "Strands.Export",
+    "references": [
+        "Strands.Sp16.Format",
+        "Strands.Audio"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

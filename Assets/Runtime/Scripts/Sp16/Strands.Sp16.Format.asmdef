@@ -1,0 +1,14 @@
+{
+    "name": "Strands.Sp16.Format",
+    "rootNamespace": "Strands.Sp16",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

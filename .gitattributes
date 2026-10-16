@@ -1,0 +1,9 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Strands: SP-16 project data and audio are binary; never normalise line endings
+*.prj binary
+*.tpkg binary
+*.bytes binary
+*.wav binary
+*.dat binary
