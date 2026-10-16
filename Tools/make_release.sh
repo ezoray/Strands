@@ -85,11 +85,12 @@ zip_contents "$STAGE/linux" "$OUT/Strands-$VERSION-Linux-x64-untested.zip"
 (cd "$OUT" && shasum -a 256 Strands-*.zip > SHA256SUMS.txt)
 
 echo
-# A build's date is its data's: Unity leaves the Windows and Linux executables alone when they have not changed.
+# A build's date is its compiled code's, which every build writes again: Unity leaves the executables
+# and its settings files alone when they have not changed.
 echo "Builds packed (each build's date):"
-echo "  macOS    $(date -r "$MAC/Contents/Resources/Data/globalgamemanagers" '+%Y-%m-%d %H:%M')"
-echo "  Windows  $(date -r "$WIN/Strands_Data/globalgamemanagers" '+%Y-%m-%d %H:%M')"
-echo "  Linux    $(date -r "$LINUX/Strands_Data/globalgamemanagers" '+%Y-%m-%d %H:%M')"
+echo "  macOS    $(date -r "$MAC/Contents/Resources/Data/Managed/Assembly-CSharp.dll" '+%Y-%m-%d %H:%M')"
+echo "  Windows  $(date -r "$WIN/Strands_Data/Managed/Assembly-CSharp.dll" '+%Y-%m-%d %H:%M')"
+echo "  Linux    $(date -r "$LINUX/Strands_Data/Managed/Assembly-CSharp.dll" '+%Y-%m-%d %H:%M')"
 echo "Commit checked out: $(git rev-parse --short HEAD 2>/dev/null || echo none)"
 echo
 ls -lh "$OUT"
