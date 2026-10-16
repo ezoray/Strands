@@ -17,12 +17,20 @@ namespace Strands.Playback
         const float ClickGain = 0.35f;
         // How long one sound takes to give way to another when what is played changes while it plays.
         const double SwitchSeconds = 0.015;
+        // How long a jump of the playhead takes to cross over, and play and pause to fade in and out:
+        // a cut from one place in the waveform to another is heard as a click (the user, 2026-10-16).
+        const double JumpSeconds = 0.008;
 
         readonly object gate = new object();
         short[] samples;
-        // The audio that was playing before a switch, while it fades out, and how far the fade has to go.
+        // The audio that was playing before a switch or a jump, while it fades out: its samples, where
+        // it has got to, and how far the fade has to go.
         short[] leaving;
+        double leavingPosition;
         int switchFrames, switchLeft;
+        // A fade in after Play, and a fade out after Pause, counted down in output frames.
+        int fadeInFrames, fadeInLeft;
+        int fadeOutFrames, fadeOutLeft;
         int frames;
         int sourceRate = 44100;
         int outputRate = 48000;
@@ -50,7 +58,7 @@ namespace Strands.Playback
         public double PositionSeconds
         {
             get { lock (gate) return position / sourceRate; }
-            set { lock (gate) position = Math.Max(earliest, Math.Min(frames, value * sourceRate)); }
+            set { lock (gate) JumpTo(Math.Max(earliest, Math.Min(frames, value * sourceRate)), JumpSeconds); }
         }
 
         /// <summary>The earliest moment that can be played, which is the start of the file or a moment of silence before it.</summary>
@@ -96,6 +104,7 @@ namespace Strands.Playback
                 earliest = 0;
                 playing = false;
                 looping = false;
+                fadeInLeft = fadeOutLeft = 0;
             }
         }
 
@@ -107,6 +116,7 @@ namespace Strands.Playback
                 leaving = null;
                 frames = 0;
                 playing = false;
+                fadeInLeft = fadeOutLeft = 0;
             }
         }
 
@@ -121,8 +131,7 @@ namespace Strands.Playback
             {
                 if (samples == null || other == samples || other.Length != samples.Length)
                     return;
-                leaving = playing ? samples : null;
-                switchFrames = switchLeft = Math.Max(1, (int)(SwitchSeconds * outputRate));
+                StartLeaving(SwitchSeconds);
                 samples = other;
             }
         }
@@ -144,6 +153,11 @@ namespace Strands.Playback
                     return;
                 if (position >= frames - 1)
                     position = looping ? loopStart : earliest;
+                if (!playing || fadeOutLeft > 0)
+                {
+                    fadeInFrames = fadeInLeft = Frames(JumpSeconds);
+                    fadeOutLeft = 0;
+                }
                 playing = true;
             }
         }
@@ -152,9 +166,36 @@ namespace Strands.Playback
         {
             lock (gate)
             {
-                playing = false;
-                leaving = null;
+                // It goes on for a moment while it fades out, and stops in the audio callback.
+                if (playing && fadeOutLeft == 0)
+                    fadeOutFrames = fadeOutLeft = Frames(JumpSeconds);
             }
+        }
+
+        int Frames(double seconds)
+        {
+            return Math.Max(1, (int)(seconds * outputRate));
+        }
+
+        // What is playing now fades out over this long while what replaces it fades in.
+        void StartLeaving(double seconds)
+        {
+            if (!playing)
+            {
+                leaving = null;
+                return;
+            }
+            leaving = samples;
+            leavingPosition = position;
+            switchFrames = switchLeft = Frames(seconds);
+        }
+
+        // Moves the playhead; while playing, the place it leaves fades out under the place it goes to.
+        void JumpTo(double frame, double fadeSeconds)
+        {
+            if (Math.Abs(frame - position) > 1)
+                StartLeaving(fadeSeconds);
+            position = frame;
         }
 
         /// <summary>
@@ -169,7 +210,7 @@ namespace Strands.Playback
                 loopEnd = Math.Min(frames, endSeconds * sourceRate);
                 looping = loopEnd - loopStart >= 64;
                 if (jumpIn && looping && (position < loopStart || position >= loopEnd))
-                    position = loopStart;
+                    JumpTo(loopStart, JumpSeconds);
             }
         }
 
@@ -177,6 +218,19 @@ namespace Strands.Playback
         {
             lock (gate)
                 looping = false;
+        }
+
+        // One side of a stereo frame at a place in source frames, between frames by a straight line,
+        // and silence before the file and at its very end.
+        float Read(short[] audio, double at, int side)
+        {
+            if (at < 0)
+                return 0;
+            int index = (int)at;
+            if (index >= frames - 1)
+                return 0;
+            float fraction = (float)(at - index);
+            return audio[2 * index + side] + (audio[2 * index + 2 + side] - audio[2 * index + side]) * fraction;
         }
 
         // Runs on the audio thread. On the listener's object this sees the final mix, which is
@@ -192,42 +246,40 @@ namespace Strands.Playback
                 int outputFrames = data.Length / channels;
                 for (int n = 0; n < outputFrames; n++)
                 {
-                    int index = (int)position;
-                    if (index >= frames - 1)
+                    if ((int)position >= frames - 1)
                     {
                         // A loop that runs to the very end of the song turns round here, because
                         // the last frame has no frame after it to reach the loop's end from.
                         if (!looping || loopStart >= frames - 1)
                         {
                             playing = false;
+                            leaving = null;
+                            fadeOutLeft = 0;
                             break;
                         }
-                        position = loopStart;
-                        index = (int)position;
+                        JumpTo(loopStart, JumpSeconds);
                     }
                     // Before the file starts there is only the silence a lead-in begins with.
-                    bool before = position < 0;
-                    // Straight-line interpolation is enough for an audition when the output is not at 44.1 kHz.
-                    float fraction = (float)(position - index);
-                    float left = before ? 0 : samples[2 * index] + (samples[2 * index + 2] - samples[2 * index]) * fraction;
-                    float right = before ? 0 : samples[2 * index + 1] + (samples[2 * index + 3] - samples[2 * index + 1]) * fraction;
-                    if (leaving != null && before)
-                    {
-                        if (--switchLeft <= 0)
-                            leaving = null;
-                    }
-                    else if (leaving != null)
+                    float left = Read(samples, position, 0);
+                    float right = Read(samples, position, 1);
+                    if (leaving != null)
                     {
                         float old = (float)switchLeft / switchFrames;
-                        left += (leaving[2 * index] + (leaving[2 * index + 2] - leaving[2 * index]) * fraction - left) * old;
-                        right += (leaving[2 * index + 1] + (leaving[2 * index + 3] - leaving[2 * index + 1]) * fraction - right) * old;
+                        left += (Read(leaving, leavingPosition, 0) - left) * old;
+                        right += (Read(leaving, leavingPosition, 1) - right) * old;
+                        leavingPosition += step;
                         if (--switchLeft <= 0)
                             leaving = null;
                     }
-                    left *= MusicGain / 32768f;
-                    right *= MusicGain / 32768f;
+                    float gain = MusicGain / 32768f;
+                    if (fadeInLeft > 0)
+                        gain *= 1f - (float)fadeInLeft-- / fadeInFrames;
+                    if (fadeOutLeft > 0)
+                        gain *= (float)fadeOutLeft / fadeOutFrames;
+                    left *= gain;
+                    right *= gain;
 
-                    if (clickEnabled && beatSeconds > 0)
+                    if (clickEnabled && beatSeconds > 0 && fadeOutLeft == 0)
                     {
                         double sinceDownbeat = position / sourceRate - firstDownbeatSeconds;
                         double beat = Math.Floor(sinceDownbeat / beatSeconds);
@@ -249,7 +301,13 @@ namespace Strands.Playback
 
                     position += step;
                     if (looping && position >= loopEnd)
-                        position = loopStart;
+                        JumpTo(loopStart, JumpSeconds);
+                    if (fadeOutLeft > 0 && --fadeOutLeft == 0)
+                    {
+                        playing = false;
+                        leaving = null;
+                        break;
+                    }
                 }
             }
         }
