@@ -1175,22 +1175,30 @@ namespace Strands.Export
                 }
 
                 // Every sample of the chunk starts on step 1, each from a pad of its own. A layer
-                // that is silent here has no sample: its pad stays empty and has no trigger.
+                // that is silent here has no sample: its pad stays empty and has no trigger. It still
+                // takes its stem's colour, choke group, loop, velocity and stretch, as the unit lets an empty
+                // pad have, so a sample put on it there behaves as the stem's others do (the user,
+                // 2026-10-16).
                 StepsBlob steps = StepsBlob.CreateEmpty();
                 for (int layer = 0; layer < chunk.FileNames.Length; layer++)
                 {
-                    if (chunk.FileNames[layer] == null)
-                        continue;
                     int pad = chunk.PadOf(layer);
-                    project.SetPadSample(chunk.Scene, pad, chunk.FileNames[layer], chunk.SampleFrames);
+                    bool hasSample = chunk.FileNames[layer] != null;
+                    // A sample sets its pad back to no choke, loop or stretch, so it goes first.
+                    if (hasSample)
+                        project.SetPadSample(chunk.Scene, pad, chunk.FileNames[layer], chunk.SampleFrames);
                     if (plan.ChokeOf(chunk.Index, layer))
                         project.SetPadChokeGroup(chunk.Scene, pad, layer);
                     if (plan.Stretch != Sp16Stretch.Off)
                         project.SetPadStretch(chunk.Scene, pad, plan.Stretch);
                     if (plan.Pads.Loop(chunk.Index, layer))
                         project.SetPadLoop(chunk.Scene, pad, true);
+                    if (plan.Pads.Velocity(chunk.Index, layer))
+                        project.SetPadVelocity(chunk.Scene, pad, true);
                     if (layerColours != null)
                         project.SetPadColour(chunk.Scene, pad, layerColours[layer]);
+                    if (!hasSample)
+                        continue;
                     if (chunk.SliceFrames != null)
                         project.SetSliceBoundaries(chunk.Scene, pad, chunk.SliceBoundariesInSample());
                     steps.SetTrigger(pad, 0);

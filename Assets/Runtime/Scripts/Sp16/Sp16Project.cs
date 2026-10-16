@@ -187,6 +187,16 @@ namespace Strands.Sp16
             playback.Scalar("audioSourceUrl").SetString(PackageSampleFolder + wavFileName);
         }
 
+        /// <summary>
+        /// Whether a pad's level follows how hard it is struck, which the unit keeps in its amp
+        /// envelope (<c>bVelocityEffective</c>; Confirmed, file: <c>velocity.prj</c>, saved on the
+        /// SP-16 with it on for tracks 1 and 2 of scene 1). Every template track has it off.
+        /// </summary>
+        public void SetPadVelocity(int scene, int pad, bool on)
+        {
+            Pad(scene, pad).Child("AmpEnvelopeData").Scalar("bVelocityEffective").SetBool(on);
+        }
+
         /// <summary>The unit's choke groups, 1 to 8 on its screen and 0 to 7 in a file (Confirmed, hardware). -1 is Off.</summary>
         public const int ChokeGroups = 8;
 

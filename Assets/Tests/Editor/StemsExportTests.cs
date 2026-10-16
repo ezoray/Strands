@@ -866,8 +866,12 @@ namespace Strands.Tests
                         expected.Add(chunk.PadOf(layer));
                         continue;
                     }
-                    // The pad is as the empty project has it: nothing was written to it.
-                    FormatTests.AssertSameTree(template.Child("SceneData" + chunk.Scene).Child("TrackData" + chunk.PadOf(layer)), track, "TrackData");
+                    // The pad has no sample, and is as the empty project has it but for its stem's colour.
+                    PrjNode empty = template.Child("SceneData" + chunk.Scene).Child("TrackData" + chunk.PadOf(layer));
+                    Assert.That(track.Child("PlaybackData").Scalar("audioSourceUrl").AsString(), Is.EqualTo(""));
+                    Assert.That(track.Scalar("colourIndex").AsInt32(), Is.EqualTo(4 * layer));
+                    track.Scalar("colourIndex").SetInt32(empty.Scalar("colourIndex").AsInt32());
+                    FormatTests.AssertSameTree(empty, track, "TrackData");
                 }
                 Assert.That(triggered, Is.EqualTo(expected), "chunk " + i);
             }
@@ -917,6 +921,60 @@ namespace Strands.Tests
             List<KeyValuePair<int, int>> triggers = StepsBlob.FromScalar(project.FindPattern(0, 0).Scalar("Steps")).GetTriggers();
             Assert.That(triggers.Count, Is.EqualTo(1));
             Assert.That(triggers[0].Key, Is.EqualTo(plan.Chunks[0].Pad));
+        }
+
+        [Test]
+        public void S4_VelocityIsTheAmpEnvelopesFlagAndIsSetByLayer()
+        {
+            // Saved on the SP-16 from a Strands package with velocity on for tracks 1 and 2 of scene 1 only.
+            PrjNode saved = Fixtures.ReadProject("velocity.prj");
+            for (int pad = 0; pad < Sp16Project.PadsPerScene; pad++)
+                Assert.That(saved.Child("SceneData0").Child("TrackData" + pad).Child("AmpEnvelopeData").Scalar("bVelocityEffective").AsBool(),
+                    Is.EqualTo(pad < 2), "track " + (pad + 1));
+
+            // The bass is silent for the first two chunks: its empty pads take its velocity too.
+            List<Stem> source = FourStems(40);
+            Hush(source[1], 0, 16);
+            StemSet stems = StemsToSp16.Prepare(source);
+            var options = new WavExportOptions();
+            options.Pads.SetVelocityOfLayer(1, true);
+            options.Pads.SetVelocityOfLayer(2, true);
+            options.Pads.SetVelocity(3, 2, false);
+            WavExportResult plan = stems.Plan("Stems", options, Grid128());
+            Sp16Project project = Sp16Project.FromPrj(Write(stems, plan)[0].Data);
+            foreach (ChunkInfo chunk in plan.Chunks)
+                for (int layer = 0; layer < 4; layer++)
+                {
+                    bool expected = (layer == 1) || (layer == 2 && chunk.Index != 3);
+                    Assert.That(project.Pad(chunk.Scene, chunk.PadOf(layer)).Child("AmpEnvelopeData").Scalar("bVelocityEffective").AsBool(),
+                        Is.EqualTo(expected), "chunk " + chunk.Index + ", layer " + layer);
+                }
+            Assert.That(options.Pads.VelocityOfLayer(2), Is.True);
+            Assert.That(options.Pads.VelocityOfLayer(0), Is.False);
+        }
+
+        [Test]
+        public void S4_Stems_AnEmptyPadTakesItsStemsChokeLoopAndStretch()
+        {
+            // The bass is silent for the first two chunks, so its pads there have no sample.
+            List<Stem> source = FourStems(40);
+            Hush(source[1], 0, 16);
+            StemSet stems = StemsToSp16.Prepare(source);
+            var options = new WavExportOptions { Stretch = Sp16Stretch.Resample };
+            options.Pads.SetChokeOfLayer(1, true);
+            options.Pads.SetLoopOfLayer(1, true);
+            WavExportResult plan = stems.Plan("Stems", options, Grid128());
+            Assert.That(plan.Chunks[0].FileNames[1], Is.Null);
+            Sp16Project project = Sp16Project.FromPrj(Write(stems, plan)[0].Data);
+            for (int i = 0; i < 2; i++)
+            {
+                PrjNode track = project.Pad(plan.Chunks[i].Scene, plan.Chunks[i].PadOf(1));
+                Assert.That(track.Child("PlaybackData").Scalar("audioSourceUrl").AsString(), Is.EqualTo(""), "chunk " + i);
+                Assert.That(track.Scalar("chokeGroup").AsInt32(), Is.EqualTo(1), "chunk " + i);
+                Assert.That(track.Child("PlaybackData").Scalar("bLoop").AsBool(), Is.True, "chunk " + i);
+                Assert.That(track.Child("PlaybackData").Scalar("stretchMode").AsString(), Is.EqualTo("Resample"), "chunk " + i);
+                Assert.That(track.Scalar("colourIndex").AsInt32(), Is.EqualTo(4), "chunk " + i);
+            }
         }
 
         [Test]

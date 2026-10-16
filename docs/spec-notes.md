@@ -6,12 +6,13 @@ Last updated 2026-10-11.
 
 ## 1. Fixtures
 
-In `Fixtures/` (28 files):
+In `Fixtures/` (29 files):
 
 | Files | Source |
 | --- | --- |
 | `arr0.prj`, `arr0-one-section.prj`, `arr2` to `arr13` (15 files) | SP-16 |
 | `route1.prj`, `route2.prj` | SP-16 |
+| `velocity.prj` | SP-16, saved by the user on 2026-10-16: a Strands package (`U14Short`) loaded, velocity turned on for tracks 1 and 2 of scene 1, saved as `velocity` |
 | `route3-mono-8ch.prj` | SP-16, saved by the user on 2026-10-10 as `mono-tracks`: scene 1 in 8ch mode, tracks 1 to 8 on outputs 1 to 8 one at a time |
 | `slice-count-8.prj`, `slice-point-moved.prj`, `slice-two-points-moved.prj` | SP-16, one 81415-frame kick on pad 1 (saved as `slice2-8-slices`, `slice3-2nd-9300`, `slice4-2nd-12985-end`) |
 | `04.prj`, `05.prj`, `08.prj` | DJS-1000 through Project Creator |
@@ -44,6 +45,7 @@ All Confirmed (file).
 - The `.dat` file is a bare tree with no container wrapper, 68 bytes for a typical sample.
 - The unit-saved template already has `chokeGroup` -1, `stretchMode` `Off` and `bLoop` false on every pad. `rev1` changed only `lengthSample` and `audioSourceUrl` per pad.
 - The full set of changes from `arr0.prj` to `rev1.prj` is: `bPlayArrangement`, `projectFilePath`, scene `name`, the inserted `PatternData<N>`, each pad's `lengthSample` and `audioSourceUrl`, the scene's routing, and the arrangement. `projectBpm` was left at 120.
+- **Velocity** is `AmpEnvelopeData.bVelocityEffective`, a bool, false on every pad of every unit-saved file until `velocity.prj`, where tracks 1 and 2 of scene 1 have it true. Nothing else in that file changed but the sample paths, which the unit rewrites when it imports a package's samples (`$Int0/%Tmp/...` to `$Int0/%Smp/[Imported]/<project>/...`). Strands sets it by stem from the Export page (2026-10-16). With it on, a pattern's triggers, which keep the unit's default step entries, play at the same level as without (Confirmed, SP-16, 2026-10-16: `U18Velocity.tpkg`, D21).
 - `arr8-length.prj` has triggers on pad 5 at steps 9, 25 and 62 with `Length` 21, confirming that steps past `Length` stay in the file.
 - `patternQuantizeUnit` is 1048577 (0x100001) and `padQuantizeUnit` is 65540 (0x10004) in every file. Still not decoded.
 - Python's `zlib` at level 6 reproduces every `Sections` and `Steps` blob in the SP-16 fixtures byte for byte. Whether Unity's `DeflateStream` does has not been checked; the tests compare blobs by inflated content, which is all the unit needs.

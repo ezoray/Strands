@@ -597,6 +597,14 @@ namespace Strands.Applications.Session
             Replan();
         }
 
+        /// <summary>Sets the velocity of every pad of some layers, over whatever their pads were set to one at a time.</summary>
+        public void SetVelocityOfLayers(IEnumerable<int> layers, bool on)
+        {
+            foreach (int layer in layers)
+                Options.Pads.SetVelocityOfLayer(layer, on);
+            Replan();
+        }
+
         /// <summary>
         /// How every sample follows the unit's tempo. A song that follows it cannot have a tempo
         /// of its own in the arrangement, which the unit goes back to, and one that does not

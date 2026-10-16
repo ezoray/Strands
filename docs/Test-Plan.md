@@ -201,6 +201,7 @@ Things true of every stems package, worth checking on U01 and then only noticing
 | D18 | `U15Song` on the **DJS-1000** | | Loads and plays as on the SP-16 | pass
 | D19 | The Windows package (C15) | | As D1 | Pass, 2026-10-16: plays fine on the SP-16 |
 | D20 | `U17Double` (made 2026-10-15, on the SP-16 and the DJS-1000) | The same stems at exactly twice the tempo, 228 BPM in the project and in all 19 sections: each pattern is 2 real bars, a sample 4.21 s long | Whether the unit holds 228 or plays at its 220 maximum. At 220 a pattern lasts 4.36 s, so every 4.2 s the sound stops for about 150 ms before the next pattern starts: a regular stutter. At 228 it plays straight through like U01. Note what the arranger and the tempo display show | Pass, 2026-10-16, SP-16: the expected stutter, so it plays at 220 BPM |
+| D21 | `U18Velocity` (made 2026-10-16 from the app, on the SP-16) | The test stems with velocity on for every stem, every pad of every scene | Every pad's velocity reads on; the arrangement plays the whole song at its usual level, no quieter than `U01Pairs`; pads struck by hand follow how hard they are hit | pass, 2026-10-16: "works fine, volume in arrangement as before"
 
 The packages made earlier for single questions, `Quiet112`, `Master112` and `Short112`, are covered by D1, D2, D14 and D16 and need not be loaded.
 

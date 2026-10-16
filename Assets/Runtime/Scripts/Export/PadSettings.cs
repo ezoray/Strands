@@ -4,7 +4,8 @@ namespace Strands.Export
 {
     /// <summary>
     /// What each pad of a package is set to on the unit beyond its sample: whether it is in its
-    /// layer's choke group, and whether it loops. A setting is made for a layer, which is every
+    /// layer's choke group, whether it loops, and whether it plays louder or softer with how hard
+    /// it is struck. A setting is made for a layer, which is every
     /// pad of a stem, or for one pad by itself. Whichever was made last holds: setting a layer
     /// takes away what was set on its pads one at a time, and a pad set afterwards keeps its own
     /// until the layer is set again.
@@ -78,6 +79,7 @@ namespace Strands.Export
 
         readonly Setting choke = new Setting();
         readonly Setting loop = new Setting();
+        readonly Setting velocity = new Setting();
 
         /// <summary>
         /// Whether a pad is in its layer's choke group: the first layer's pads in group 1, the
@@ -93,17 +95,27 @@ namespace Strands.Export
         /// </summary>
         public bool Loop(int chunk, int layer) { return loop.Of(chunk, layer); }
 
+        /// <summary>
+        /// Whether a pad's level follows how hard it is struck (the unit's velocity setting). Off,
+        /// as the unit has it, every hit is at full level.
+        /// </summary>
+        public bool Velocity(int chunk, int layer) { return velocity.Of(chunk, layer); }
+
         /// <summary>What a layer was last set to as a whole, whatever its pads have been set to since one at a time.</summary>
         public bool ChokeOfLayer(int layer) { return choke.OfLayer(layer); }
 
         /// <summary>What a layer was last set to as a whole, whatever its pads have been set to since one at a time.</summary>
         public bool LoopOfLayer(int layer) { return loop.OfLayer(layer); }
 
+        /// <summary>What a layer was last set to as a whole, whatever its pads have been set to since one at a time.</summary>
+        public bool VelocityOfLayer(int layer) { return velocity.OfLayer(layer); }
+
         /// <summary>Takes every setting of another, in place of its own.</summary>
         public void CopyFrom(PadSettings other)
         {
             choke.CopyFrom(other.choke);
             loop.CopyFrom(other.loop);
+            velocity.CopyFrom(other.velocity);
         }
 
         /// <summary>Whether any pad at all is set to loop.</summary>
@@ -119,6 +131,11 @@ namespace Strands.Export
             loop.SetPad(chunk, layer, on);
         }
 
+        public void SetVelocity(int chunk, int layer, bool on)
+        {
+            velocity.SetPad(chunk, layer, on);
+        }
+
         /// <summary>Sets every pad of a layer, whatever its pads were set to one at a time.</summary>
         public void SetChokeOfLayer(int layer, bool on)
         {
@@ -129,6 +146,12 @@ namespace Strands.Export
         public void SetLoopOfLayer(int layer, bool on)
         {
             loop.SetLayer(layer, on);
+        }
+
+        /// <summary>Sets every pad of a layer, whatever its pads were set to one at a time.</summary>
+        public void SetVelocityOfLayer(int layer, bool on)
+        {
+            velocity.SetLayer(layer, on);
         }
     }
 }

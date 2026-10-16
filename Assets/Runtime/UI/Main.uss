@@ -1370,12 +1370,12 @@
 }
 
 .stemrow__cell {
-    width: 150px;
+    width: 120px;
     margin-right: 12px;
 }
 
 .stemrow__cell > .seg {
-    width: 150px;
+    width: 120px;
 }
 
 .stemrow--head .caption {

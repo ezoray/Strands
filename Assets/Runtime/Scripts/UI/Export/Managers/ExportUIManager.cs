@@ -473,20 +473,25 @@ namespace Strands.UI.Export
             stemRows.Clear();
             if (plan == null)
                 return;
-            if (!plan.CanChoke)
+            // Velocity is for every pad; choke and loop only up to a group for each track.
+            bool chokeAndLoop = plan.CanChoke;
+            if (!chokeAndLoop)
             {
                 var none = new Label(string.Format(Inv, "Choke and loop need {0} tracks per pattern or fewer.", Sp16Project.ChokeGroups));
                 none.AddToClassList("hint");
                 stemRows.Add(none);
-                return;
             }
 
             var head = new VisualElement();
             head.AddToClassList("stemrow");
             head.AddToClassList("stemrow--head");
             head.Add(RowName(null, null));
-            head.Add(RowCaption("Choke group"));
-            head.Add(RowCaption("Loop"));
+            if (chokeAndLoop)
+            {
+                head.Add(RowCaption("Choke group"));
+                head.Add(RowCaption("Loop"));
+            }
+            head.Add(RowCaption("Velocity"));
             stemRows.Add(head);
 
             var all = new List<int>();
@@ -506,10 +511,10 @@ namespace Strands.UI.Export
                             layers.Add(layer);
                     // A strip with one track names its group; one with several has a group for each.
                     string[] choke = { "Off", layers.Count == 1 ? (layers[0] + 1).ToString(Inv) : "On" };
-                    stemRows.Add(Row(plan, session.NameOfStrip(strip), Theme.Strip(strip), layers, choke, false));
+                    stemRows.Add(Row(plan, session.NameOfStrip(strip), Theme.Strip(strip), layers, choke, false, chokeAndLoop));
                 }
             }
-            stemRows.Add(Row(plan, plan.Layers.Count == 0 ? SongName : "All", null, all, OffOn, plan.Layers.Count > 0));
+            stemRows.Add(Row(plan, plan.Layers.Count == 0 ? SongName : "All", null, all, OffOn, plan.Layers.Count > 0, chokeAndLoop));
         }
 
         static VisualElement RowName(string name, Color? colour)
@@ -538,7 +543,7 @@ namespace Strands.UI.Export
             return cell;
         }
 
-        VisualElement Row(WavExportResult plan, string name, Color? colour, List<int> layers, string[] chokeLabels, bool forAll)
+        VisualElement Row(WavExportResult plan, string name, Color? colour, List<int> layers, string[] chokeLabels, bool forAll, bool chokeAndLoop)
         {
             var row = new VisualElement();
             row.AddToClassList("stemrow");
@@ -547,26 +552,34 @@ namespace Strands.UI.Export
             row.Add(RowName(name, colour));
             SongSession song = session;
 
-            var choke = new VisualElement();
-            choke.AddToClassList("stemrow__cell");
-            choke.Add(Controls.Segmented(chokeLabels, StateOf(plan, layers, true), chosen => song.SetChokeOfLayers(layers, chosen == 1)));
-            row.Add(choke);
+            if (chokeAndLoop)
+            {
+                var choke = new VisualElement();
+                choke.AddToClassList("stemrow__cell");
+                choke.Add(Controls.Segmented(chokeLabels, StateOf(layers, plan.Pads.ChokeOfLayer), chosen => song.SetChokeOfLayers(layers, chosen == 1)));
+                row.Add(choke);
 
-            var loop = new VisualElement();
-            loop.AddToClassList("stemrow__cell");
-            loop.Add(Controls.Segmented(OffOn, StateOf(plan, layers, false), chosen => song.SetLoopOfLayers(layers, chosen == 1)));
-            row.Add(loop);
+                var loop = new VisualElement();
+                loop.AddToClassList("stemrow__cell");
+                loop.Add(Controls.Segmented(OffOn, StateOf(layers, plan.Pads.LoopOfLayer), chosen => song.SetLoopOfLayers(layers, chosen == 1)));
+                row.Add(loop);
+            }
+
+            var velocity = new VisualElement();
+            velocity.AddToClassList("stemrow__cell");
+            velocity.Add(Controls.Segmented(OffOn, StateOf(layers, plan.Pads.VelocityOfLayer), chosen => song.SetVelocityOfLayers(layers, chosen == 1)));
+            row.Add(velocity);
             return row;
         }
 
         // What the layers were last set to from a row: 0 off, 1 on, -1 when they differ. A pad set by
         // itself does not show here; pressing a row sets every pad it covers, such pads among them.
-        static int StateOf(WavExportResult plan, List<int> layers, bool choke)
+        static int StateOf(List<int> layers, Func<int, bool> setting)
         {
             int on = 0, off = 0;
             foreach (int layer in layers)
             {
-                if (choke ? plan.Pads.ChokeOfLayer(layer) : plan.Pads.LoopOfLayer(layer))
+                if (setting(layer))
                     on++;
                 else
                     off++;
