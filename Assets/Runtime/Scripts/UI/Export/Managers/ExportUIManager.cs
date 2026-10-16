@@ -158,7 +158,7 @@ namespace Strands.UI.Export
                 }
                 bool mono = plan.Layers.Count > 0 && plan.Layers[layer].IsMono;
                 pads.Change(key, session.SampleOfPad(plan, chunk, layer), mono ? 1 : 2,
-                    plan.Pads.Loop(chunk, layer), plan.ChokeOf(chunk, layer) ? layer + 1 : 0);
+                    plan.LoopOf(chunk, layer), plan.ChokeOf(chunk, layer) ? layer + 1 : 0);
             }
         }
 
@@ -374,12 +374,12 @@ namespace Strands.UI.Export
             if (plan.CanChoke)
             {
                 bool choked = plan.ChokeOf(index, layer);
-                Button choke = PadKey("Choke " + (layer + 1).ToString(Inv), choked, () => song.SetChokeOfPad(index, layer, !choked));
-                // A pad that loops while the arranger is on is choked whatever it is set to: nothing else would stop it.
-                choke.SetEnabled(!plan.LoopForcesChoke(index, layer));
-                keys.Add(choke);
+                keys.Add(PadKey("Choke " + (layer + 1).ToString(Inv), choked, () => song.SetChokeOfPad(index, layer, !choked)));
+                // Nothing loops with the arrangement on; what the pad is set to shows greyed, and holds again with it off.
                 bool looped = plan.Pads.Loop(index, layer);
-                keys.Add(PadKey("Loop", looped, () => song.SetLoopOfPad(index, layer, !looped)));
+                Button loop = PadKey("Loop", looped, () => song.SetLoopOfPad(index, layer, !looped));
+                loop.SetEnabled(!plan.Arrangement);
+                keys.Add(loop);
             }
             var spacer = new VisualElement();
             spacer.AddToClassList("spacer");
@@ -424,7 +424,7 @@ namespace Strands.UI.Export
                 return;
             bool mono = plan.Layers.Count > 0 && plan.Layers[view.Layer].IsMono;
             pads.Play(view.Key, session.SampleOfPad(plan, view.Chunk, view.Layer), mono ? 1 : 2, plan.SampleRate,
-                plan.Pads.Loop(view.Chunk, view.Layer), plan.ChokeOf(view.Chunk, view.Layer) ? view.Layer + 1 : 0);
+                plan.LoopOf(view.Chunk, view.Layer), plan.ChokeOf(view.Chunk, view.Layer) ? view.Layer + 1 : 0);
         }
 
         /// <summary>Lights the pads that are sounding, moves the line across each one's waveform, and shows Stop while any sounds.</summary>
@@ -570,7 +570,10 @@ namespace Strands.UI.Export
 
                 var loop = new VisualElement();
                 loop.AddToClassList("stemrow__cell");
-                loop.Add(Controls.Segmented(OffOn, StateOf(layers, plan.Pads.LoopOfLayer), chosen => song.SetLoopOfLayers(layers, chosen == 1)));
+                VisualElement loopSwitch = Controls.Segmented(OffOn, StateOf(layers, plan.Pads.LoopOfLayer), chosen => song.SetLoopOfLayers(layers, chosen == 1));
+                // Greyed with the arrangement on, when nothing loops (WavExportResult.LoopOf).
+                loopSwitch.SetEnabled(!plan.Arrangement);
+                loop.Add(loopSwitch);
                 row.Add(loop);
             }
 

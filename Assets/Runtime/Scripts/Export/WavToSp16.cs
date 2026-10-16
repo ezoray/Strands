@@ -278,15 +278,18 @@ namespace Strands.Export
         public int LoopFadeOutFrames, LoopFadeInFrames;
         /// <summary>Whether the plan has few enough layers for each to have one of the unit's choke groups.</summary>
         public bool CanChoke { get { return SamplesPerChunk <= Sp16Project.ChokeGroups; } }
+        /// <summary>Whether a pad of the plan is written in its layer's choke group.</summary>
+        public bool ChokeOf(int chunk, int layer) { return CanChoke && Pads.Choke(chunk, layer); }
         /// <summary>
-        /// Whether a pad of the plan is written in its layer's choke group: when it is set to be,
-        /// and also when it loops and the arranger is on, where a loop that nothing cut off would
-        /// go on under every pattern after its own (the user, 2026-10-12: "with arranger on and
-        /// loop on I think we have to choke looped tracks").
+        /// Whether a pad of the plan loops. Never with the arrangement on: the song's last sample is
+        /// shorter than its pattern, so a loop played its start again before the arranger stopped
+        /// (heard on the SP-16), and a project for playing loops by hand is not one for playing from
+        /// the arranger (the user, 2026-10-16: "looping and arrangement playback should be mutually
+        /// exclusive"). What the pads are set to is kept, and holds again with the arrangement off.
         /// </summary>
-        public bool ChokeOf(int chunk, int layer) { return CanChoke && (Pads.Choke(chunk, layer) || LoopForcesChoke(chunk, layer)); }
-        /// <summary>Whether a pad is in its choke group only because it loops with the arranger on.</summary>
-        public bool LoopForcesChoke(int chunk, int layer) { return Arrangement && Pads.Loop(chunk, layer); }
+        public bool LoopOf(int chunk, int layer) { return !Arrangement && Pads.Loop(chunk, layer); }
+        /// <summary>Whether any pad of the plan loops.</summary>
+        public bool AnyLoop { get { return !Arrangement && Pads.AnyLoop; } }
 
         public long SampleBytes
         {
@@ -351,7 +354,7 @@ namespace Strands.Export
                     padsInUse++;
                     if (ChokeOf(chunk.Index, layer))
                         choked++;
-                    if (Pads.Loop(chunk.Index, layer))
+                    if (LoopOf(chunk.Index, layer))
                         looped++;
                 }
             if (choked > 0)
@@ -620,7 +623,8 @@ namespace Strands.Export
                 shortest = Math.Min(shortest, boundaries[i + 1] - boundaries[i]);
             int crossfade = Math.Max(0, Math.Min((int)Math.Round(options.CrossfadeMs / 1000.0 * rate), shortest / 4));
             // A sample that loops has to be exactly as long as its pattern, with no tail and no fade.
-            if (options.Pads.AnyLoop)
+            // Nothing loops with the arrangement on (WavExportResult.LoopOf).
+            if (options.Pads.AnyLoop && !options.Arrangement)
                 crossfade = 0;
             result.CrossfadeFrames = crossfade;
 
@@ -1191,7 +1195,7 @@ namespace Strands.Export
                         project.SetPadChokeGroup(chunk.Scene, pad, layer);
                     if (plan.Stretch != Sp16Stretch.Off)
                         project.SetPadStretch(chunk.Scene, pad, plan.Stretch);
-                    if (plan.Pads.Loop(chunk.Index, layer))
+                    if (plan.LoopOf(chunk.Index, layer))
                         project.SetPadLoop(chunk.Scene, pad, true);
                     if (plan.Pads.Velocity(chunk.Index, layer))
                         project.SetPadVelocity(chunk.Scene, pad, true);
@@ -1260,7 +1264,7 @@ namespace Strands.Export
             int channels = mono ? 1 : 2;
             int frames = chunk.SampleFrames - chunk.LeadingSilenceFrames;
             // A sample that loops is brought down to nothing at its two ends, where it goes round.
-            bool loops = plan.Pads.Loop(chunk.Index, layer);
+            bool loops = plan.LoopOf(chunk.Index, layer);
             int padFadeIn = loops ? Math.Min(frames / 4, Math.Max(fadeIn, plan.LoopFadeInFrames)) : fadeIn;
             int padFadeOut = loops ? Math.Min(frames / 4, Math.Max(fadeOut, plan.LoopFadeOutFrames)) : fadeOut;
             short[] samples = mono

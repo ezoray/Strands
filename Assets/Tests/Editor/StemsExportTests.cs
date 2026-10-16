@@ -550,7 +550,8 @@ namespace Strands.Tests
         public void S4_Stems_APadIsInItsLayersChokeGroupAndLoopsWhenSetTo()
         {
             StemSet stems = StemsToSp16.Prepare(FourStems(40));
-            var options = new WavExportOptions();
+            // Loops are only written with the arrangement off.
+            var options = new WavExportOptions { Arrangement = false };
             for (int layer = 0; layer < 4; layer++)
                 options.Pads.SetChokeOfLayer(layer, true);
             // One pad taken out of its group by itself, and one set to loop.
@@ -569,6 +570,20 @@ namespace Strands.Tests
             // A loop is exactly its pattern's length: the song is cut with no crossfade.
             Assert.That(plan.CrossfadeFrames, Is.EqualTo(0));
             Assert.That(stems.Plan("Stems", new WavExportOptions(), Grid128()).CrossfadeFrames, Is.GreaterThan(0));
+
+            // With the arrangement on nothing loops, whatever the pads are set to, and the song keeps
+            // its crossfade: the last sample is shorter than its pattern, and a loop played its start
+            // again before the arranger stopped (the user, 2026-10-16). The settings are kept.
+            options.Arrangement = true;
+            WavExportResult arranged = stems.Plan("Stems", options, Grid128());
+            Assert.That(arranged.LoopOf(2, 0), Is.False);
+            Assert.That(arranged.AnyLoop, Is.False);
+            Assert.That(arranged.Pads.Loop(2, 0), Is.True);
+            Assert.That(arranged.CrossfadeFrames, Is.GreaterThan(0));
+            Sp16Project arrangedProject = Sp16Project.FromPrj(Write(stems, arranged)[0].Data);
+            foreach (ChunkInfo chunk in arranged.Chunks)
+                for (int layer = 0; layer < 4; layer++)
+                    Assert.That(arrangedProject.Pad(chunk.Scene, chunk.PadOf(layer)).Child("PlaybackData").Scalar("bLoop").AsBool(), Is.False);
 
             // Whichever was set last holds: the layer over its pads, then a pad over its layer.
             var pads = new PadSettings();
@@ -592,11 +607,10 @@ namespace Strands.Tests
             Assert.That(pads.Loop(0, 2) && !pads.Choke(0, 2));
             Assert.That(pads.AnyLoop);
 
-            // With the arranger on a pad that loops is choked whatever it is set to, or it would
-            // go on under every pattern after its own. With it off it is as it was set.
+            // A pad that loops is choked only when it is set to be, arrangement or not.
             var loose = new WavExportOptions();
             loose.Pads.SetLoop(1, 2, true);
-            Assert.That(stems.Plan("Stems", loose, Grid128()).ChokeOf(1, 2));
+            Assert.That(stems.Plan("Stems", loose, Grid128()).ChokeOf(1, 2), Is.False);
             loose.Arrangement = false;
             WavExportResult byHand = stems.Plan("Stems", loose, Grid128());
             Assert.That(byHand.ChokeOf(1, 2), Is.False);
@@ -671,11 +685,12 @@ namespace Strands.Tests
         {
             StemSet stems = StemsToSp16.Prepare(FourStems(40));
             // 3 ms out and 1 ms in unless told otherwise, which is what the unit was heard with.
-            var options = new WavExportOptions();
+            // Loops are only written with the arrangement off.
+            var options = new WavExportOptions { Arrangement = false };
             options.Pads.SetLoopOfLayer(0, true);
             WavExportResult plan = stems.Plan("Stems", options, Grid128());
             List<StoredZipReader.Entry> entries = Write(stems, plan);
-            var plain = new WavExportOptions { LoopFadeOutMs = 0, LoopFadeInMs = 0 };
+            var plain = new WavExportOptions { LoopFadeOutMs = 0, LoopFadeInMs = 0, Arrangement = false };
             plain.Pads.SetLoopOfLayer(0, true);
             List<StoredZipReader.Entry> unfaded = Write(stems, stems.Plan("Stems", plain, Grid128()));
 
@@ -960,7 +975,7 @@ namespace Strands.Tests
             List<Stem> source = FourStems(40);
             Hush(source[1], 0, 16);
             StemSet stems = StemsToSp16.Prepare(source);
-            var options = new WavExportOptions { Stretch = Sp16Stretch.Resample };
+            var options = new WavExportOptions { Stretch = Sp16Stretch.Resample, Arrangement = false };
             options.Pads.SetChokeOfLayer(1, true);
             options.Pads.SetLoopOfLayer(1, true);
             WavExportResult plan = stems.Plan("Stems", options, Grid128());
