@@ -1356,6 +1356,9 @@
 
 .stemrow--all {
     margin-top: 4px;
+}
+
+.stemrow--last {
     margin-bottom: 0;
 }
 
@@ -1382,8 +1385,9 @@
     margin-bottom: 0;
 }
 
+/* Every group of Options is 16 below the one above it (the user, 2026-10-16) */
 .group--export {
-    margin: 12px 0 0 0;
+    margin: 16px 0 0 0;
 }
 
 .export__choice > .seg {

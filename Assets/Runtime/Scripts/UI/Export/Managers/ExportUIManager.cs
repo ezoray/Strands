@@ -27,7 +27,6 @@ namespace Strands.UI.Export
         const string HiddenClass = "hidden";
         const string OnClass = "on";
         const string BadClass = "warnings--bad";
-        const string SongName = "Song";
         const string Keys = "Space stop  ·  ← → scene";
         const string QuietClass = "pads__stop--quiet";
 
@@ -485,7 +484,11 @@ namespace Strands.UI.Export
             var head = new VisualElement();
             head.AddToClassList("stemrow");
             head.AddToClassList("stemrow--head");
-            head.Add(RowName(null, null));
+            // A song in one file has the one row, which needs no name: its switches line up with
+            // the choices under them (the user, 2026-10-16).
+            bool named = plan.Layers.Count > 0;
+            if (named)
+                head.Add(RowName(null, null));
             if (chokeAndLoop)
             {
                 head.Add(RowCaption("Choke group"));
@@ -514,7 +517,10 @@ namespace Strands.UI.Export
                     stemRows.Add(Row(plan, session.NameOfStrip(strip), Theme.Strip(strip), layers, choke, false, chokeAndLoop));
                 }
             }
-            stemRows.Add(Row(plan, plan.Layers.Count == 0 ? SongName : "All", null, all, OffOn, plan.Layers.Count > 0, chokeAndLoop));
+            VisualElement last = Row(plan, named ? "All" : null, null, all, OffOn, named, chokeAndLoop);
+            // The last row has no space under it, so the gap to Time stretch is the panel's own.
+            last.AddToClassList("stemrow--last");
+            stemRows.Add(last);
         }
 
         static VisualElement RowName(string name, Color? colour)
@@ -549,7 +555,8 @@ namespace Strands.UI.Export
             row.AddToClassList("stemrow");
             if (forAll)
                 row.AddToClassList("stemrow--all");
-            row.Add(RowName(name, colour));
+            if (name != null)
+                row.Add(RowName(name, colour));
             SongSession song = session;
 
             if (chokeAndLoop)
