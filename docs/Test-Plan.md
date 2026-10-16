@@ -132,6 +132,17 @@ Start the app from Finder, not from the Editor.
 | B58 | The lead-in and the last pattern | The lead-in shows its length with no arrows, and nothing below it moves; on the last pattern ← and → are off and "Pattern length" and the length are greyed; between 1 bar and 4 bars the → does not move | pass
 | B59 | A song whose phrases move two bars against the patterns part way in: shorten the pattern before the section that moved | Build-ups after it start on a pattern again | pass
 
+### Added on 2026-10-16
+
+| | Do | Expect | Result |
+|---|---|---|---|
+| B60 | A quiet, sparse song (a ballad, an instrumental): while playing, click about the waveform, select patterns, loop a pattern, play and pause | No click at any jump, at the loop's turn, or as play starts or stops; the metronome still on the beats |
+| B61 | Export page with stems: switch Velocity on and off for a strip and for All | A third column beside Choke group and Loop, headings centred over their switches; the rows fit the panel with no overlap |
+| B62 | Arrangement On, then Off, with some strips set to Loop | With Arrangement on the Loop switches and the pads' Loop buttons are greyed and pads do not loop when played; switched off, the loops set before are back |
+| B63 | Set Time stretch, both arrangement switches and Choke, Loop and Velocity for each strip. Quit, reopen, load other stems and Analyse | The Export page starts as it was left, strip by strip; a pad set by itself does not carry over |
+| B64 | A song in one file, Export page | No Song label; Choke group, Loop and Velocity start at the panel's left; the groups below are evenly spaced |
+| B65 | Load more than fits: stems on separate tracks; then the same with strips summed and split to mono; then on Master | Analyse stays on Source with "Calculated size of … is too large to fit." in red, and the advice names only what would help: no "Sum stems" when nothing can be summed, no "use mono" on Master or when every strip is mono |
+
 ## C. Windows build
 
 Run on an ordinary 64-bit Intel or AMD PC. First, the unattended run, in a command prompt in the build's folder, with the full path of the Stems folder in quotes (a folder stands for its audio files):
@@ -202,6 +213,8 @@ Things true of every stems package, worth checking on U01 and then only noticing
 | D19 | The Windows package (C15) | | As D1 | Pass, 2026-10-16: plays fine on the SP-16 |
 | D20 | `U17Double` (made 2026-10-15, on the SP-16 and the DJS-1000) | The same stems at exactly twice the tempo, 228 BPM in the project and in all 19 sections: each pattern is 2 real bars, a sample 4.21 s long | Whether the unit holds 228 or plays at its 220 maximum. At 220 a pattern lasts 4.36 s, so every 4.2 s the sound stops for about 150 ms before the next pattern starts: a regular stutter. At 228 it plays straight through like U01. Note what the arranger and the tempo display show | Pass, 2026-10-16, SP-16: the expected stutter, so it plays at 220 BPM |
 | D21 | `U18Velocity` (made 2026-10-16 from the app, on the SP-16) | The test stems with velocity on for every stem, every pad of every scene | Every pad's velocity reads on; the arrangement plays the whole song at its usual level, no quieter than `U01Pairs`; pads struck by hand follow how hard they are hit | pass, 2026-10-16: "works fine, volume in arrangement as before"
+| D22 | `U19EmptyPads` (made 2026-10-16 from the app) | The test stems, arrangement on, every stem choked with velocity on. The bass is silent in the lead-in, so scene 1 track 14 has no sample | Plays as `U01Pairs`. Track 14 of scene 1 shows the bass's colour and is in choke group 2 with velocity on; a sample put on it there behaves as the bass's other pads |
+| D23 | `U20Loops` (made 2026-10-16 from the app) | The test stems, arrangement off, every pad looping and choked by stem | Opens in pattern mode. Each pad and pattern played by hand goes round cleanly, and a stem's next pattern cuts its last off. The last pattern's samples are shorter than the pattern, so they are expected to go round early: note how it sounds |
 
 The packages made earlier for single questions, `Quiet112`, `Master112` and `Short112`, are covered by D1, D2, D14 and D16 and need not be loaded.
 
