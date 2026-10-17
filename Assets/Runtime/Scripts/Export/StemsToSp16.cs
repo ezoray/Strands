@@ -260,6 +260,27 @@ namespace Strands.Export
         }
 
         /// <summary>
+        /// Files added together into one song, as the stems are for finding the beat: shorter ones
+        /// filled out with silence, and the whole turned down when the sum would not fit in 16 bits.
+        /// One file is given back as it is.
+        /// </summary>
+        public static WavData MixOf(IList<WavData> files)
+        {
+            if (files.Count == 1)
+                return files[0];
+            int frames = 0;
+            foreach (WavData file in files)
+                frames = Math.Max(frames, file.Frames);
+            var audio = new short[files.Count][];
+            for (int i = 0; i < audio.Length; i++)
+            {
+                WavToSp16.CheckSampleRate(files[i]);
+                audio[i] = ToLength(files[i].Samples, frames);
+            }
+            return new WavData { SampleRate = files[0].SampleRate, Samples = AddToFit(audio), SourceChannels = 2, SourceBitsPerSample = files[0].SourceBitsPerSample };
+        }
+
+        /// <summary>
         /// Finds a grid from every stem on its own and from all of them added together, and takes
         /// the one whose lines have the most attack on them in the song as a whole.
         /// The stems together are not always the best guide: a steady sound in the bass can hide the

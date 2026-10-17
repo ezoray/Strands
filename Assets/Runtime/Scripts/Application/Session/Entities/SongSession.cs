@@ -44,6 +44,13 @@ namespace Strands.Applications.Session
         /// <summary>Why there is no plan.</summary>
         public string PlanError { get; private set; }
         /// <summary>
+        /// How many patterns the song is cut into, the lead-in among them, whether or not the plan
+        /// fitted; 0 when it could not be laid out at all. It goes with the grid and the start, not
+        /// with the outputs, so the Source screen can tell from it whether another layout of the
+        /// same files has room for the song.
+        /// </summary>
+        public int PatternsNeeded { get; private set; }
+        /// <summary>
         /// For each chunk of the plan, how far its hits are from the grid in milliseconds (positive
         /// when the audio is late), or NaN where there is no clear beat to measure.
         /// </summary>
@@ -755,12 +762,15 @@ namespace Strands.Applications.Session
                 Options.StartBeat = StartBeat;
                 Plan = Stems != null ? Stems.Plan(ProjectName, Options, Grid) : WavToSp16.Plan(Wav, ProjectName, Options, Grid);
                 PlanError = null;
+                PatternsNeeded = Plan.PatternsNeeded;
                 MeasureOffsets();
             }
             catch (Exception e) when (e is InvalidOperationException || e is NotSupportedException || e is ArgumentException)
             {
                 Plan = null;
                 PlanError = e.Message;
+                var refused = e as PlanRefusedException;
+                PatternsNeeded = refused == null ? 0 : refused.PatternsNeeded;
                 PatternOffsetsMs = null;
             }
             if (Changed != null)

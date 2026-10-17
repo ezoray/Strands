@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Strands.Applications.Core;
 using Strands.Applications.Session;
 using Strands.Audio;
@@ -46,7 +48,7 @@ namespace Strands.UI.Source
         VisualElement strips, outputsHost;
         Button addFiles, addFolder, clearFiles, analyse;
         Label info, error, summary;
-        Label statTracks, statTracksCaption, statPatterns, statPatternsCaption, statBars, statLength;
+        Label statTracks, statTracksCaption, statPatterns, statPatternsCaption, statBars, statNeeded, statLength;
         // The small waveform shown on each file, made while the file loads.
         readonly Dictionary<StripFile, WaveformPeaks> peaks = new Dictionary<StripFile, WaveformPeaks>();
         // The low, middle and high sound of a file, which colour its waveform when it is a full song
@@ -59,6 +61,17 @@ namespace Strands.UI.Source
         // strip is not added up again every time the screen is drawn.
         readonly List<KeyValuePair<StripFile[], bool>> sumsThatClip = new List<KeyValuePair<StripFile[], bool>>();
         int namedVersion = -1;
+        // How many patterns the song is cut into, guessed from the files as soon as they are loaded,
+        // so that it can be said before Analyse how many tracks it has room for. The guess runs in
+        // the background, from the files summed, as Analyse would lay out a song in one file.
+        sealed class Estimate
+        {
+            public int Version, Patterns;
+        }
+        int estimatedVersion = -1;
+        int estimatedPatterns;
+        CancellationTokenSource estimating;
+        Estimate estimated;
         // What the main button reads when nothing is running, and whether what is running is the analysis.
         string analyseText = "Analyse";
         bool analysing;
@@ -144,6 +157,7 @@ namespace Strands.UI.Source
             statPatterns = root.Q<Label>("statPatterns");
             statPatternsCaption = root.Q<Label>("statPatternsCaption");
             statBars = root.Q<Label>("statBars");
+            statNeeded = root.Q<Label>("statNeeded");
             statLength = root.Q<Label>("statLength");
 
             addFiles.clicked += () => ChooseFiles(-1, 0);
@@ -167,6 +181,8 @@ namespace Strands.UI.Source
 
         void OnDestroy()
         {
+            if (estimating != null)
+                estimating.Cancel();
             uiState.StateChanged -= OnStateChanged;
             uiState.StepRequested -= OnStepRequested;
         }
@@ -190,6 +206,12 @@ namespace Strands.UI.Source
 
         void Update()
         {
+            Estimate done = Interlocked.Exchange(ref estimated, null);
+            if (done != null && done.Version == estimatedVersion)
+            {
+                estimatedPatterns = done.Patterns;
+                ShowFigures(app.Strips);
+            }
             bool idle = !jobs.Busy;
             StripLayout layout = app.Strips;
             // The button that was pressed says so for as long as the analysis runs.
@@ -203,7 +225,7 @@ namespace Strands.UI.Source
             clearFiles.SetEnabled(idle && layout.FileCount > 0);
             strips.SetEnabled(idle);
             outputsHost.SetEnabled(idle);
-            analyse.SetEnabled(idle && layout.FileCount > 0 && layout.PatternsPerScene > 0 && !CannotExport());
+            analyse.SetEnabled(idle && layout.FileCount > 0 && layout.PatternsPerScene > 0 && !CannotExport() && !TooManyTracksForSong());
 
             if (uiState.State != UIStates.Source || !idle || Controls.IsTyping(uiState.Root))
                 return;
@@ -342,7 +364,7 @@ namespace Strands.UI.Source
         public void Analyse()
         {
             StripLayout layout = app.Strips;
-            if (layout.FileCount == 0 || layout.PatternsPerScene == 0 || CannotExport())
+            if (layout.FileCount == 0 || layout.PatternsPerScene == 0 || CannotExport() || TooManyTracksForSong())
                 return;
             // After the strips were changed to bring a package that did not fit within the unit,
             // the grid found from the same files still holds, so the stems are only laid out again.
@@ -435,7 +457,72 @@ namespace Strands.UI.Source
         bool CanContinue()
         {
             SongSession session = app.Session;
-            return session != null && session.HasGrid && session.FilesVersion == app.Strips.FilesVersion && app.Strips.FileCount > 0 && !CannotExport();
+            return session != null && session.HasGrid && session.FilesVersion == app.Strips.FilesVersion && app.Strips.FileCount > 0 && !CannotExport() && !TooManyTracksForSong();
+        }
+
+        /// <summary>
+        /// Whether the strips as they are give the song more tracks than its patterns leave room
+        /// for, as an analysis of these files found it: the patterns go with the grid and not with
+        /// the outputs, so it holds however the files are laid out. Making tracks mono does not
+        /// help: a mono track takes a pad as a stereo one does.
+        /// </summary>
+        bool TooManyTracksForSong()
+        {
+            bool exact;
+            int needed = SongPatterns(out exact);
+            return exact && app.Strips.Tracks > WavToSp16.MostTracksFor(needed);
+        }
+
+        /// <summary>
+        /// How many patterns the song is cut into: as the last analysis of these files found it
+        /// (exact), or else as guessed when they were loaded; 0 when neither is known yet.
+        /// </summary>
+        int SongPatterns(out bool exact)
+        {
+            SongSession session = app.Session;
+            exact = session != null && session.HasGrid && session.FilesVersion == app.Strips.FilesVersion && session.PatternsNeeded > 0;
+            if (exact)
+                return session.PatternsNeeded;
+            return estimatedVersion == app.Strips.FilesVersion ? estimatedPatterns : 0;
+        }
+
+        /// <summary>
+        /// Starts a guess at the song's length in patterns when the files have changed since the
+        /// last one: a beat grid found from them summed, laid out as Analyse would lay out a song
+        /// in one file. It runs beside everything else and is dropped if the files change again.
+        /// </summary>
+        void EstimatePatterns(StripLayout layout)
+        {
+            if (layout.FilesVersion == estimatedVersion)
+                return;
+            if (estimating != null)
+                estimating.Cancel();
+            estimating = null;
+            estimatedVersion = layout.FilesVersion;
+            estimatedPatterns = 0;
+            if (layout.FileCount == 0)
+                return;
+            int version = layout.FilesVersion;
+            List<WavData> audio = layout.Files.ConvertAll(file => file.Audio);
+            var cancel = new CancellationTokenSource();
+            estimating = cancel;
+            Task.Run(() =>
+            {
+                try
+                {
+                    WavData song = StemsToSp16.MixOf(audio);
+                    var session = new SongSession("", "Estimate", song, null);
+                    session.ApplyAnalysis(BeatGridAnalyzer.Analyze(song.Samples, song.SampleRate, session.Options.Grid, cancel.Token), false);
+                    if (!cancel.IsCancellationRequested && session.PatternsNeeded > 0)
+                        estimated = new Estimate { Version = version, Patterns = session.PatternsNeeded };
+                }
+                catch (Exception e)
+                {
+                    // A guess that cannot be made leaves the figure as unknown; Analyse says why.
+                    if (!(e is OperationCanceledException))
+                        Debug.Log("Length of song not estimated: " + e.Message);
+                }
+            });
         }
 
         /// <summary>
@@ -538,6 +625,7 @@ namespace Strands.UI.Source
                     app.SuggestProjectName(DefaultName(layout.Files));
             }
             BuildOutputsChoice(layout);
+            EstimatePatterns(layout);
             // The cards are made again, so one that was being dragged is no longer there to drop.
             EndDrag();
             places.Clear();
@@ -953,6 +1041,13 @@ namespace Strands.UI.Source
             statPatternsCaption.text = patterns == 1 ? "pattern per scene" : "patterns per scene";
             statBars.text = fits ? (patterns * Sp16Project.Scenes * 4).ToString(Inv) : "–";
             statLength.text = count == 0 ? "–" : length;
+            // The song's own length in bars, against the room: every pattern takes four bars of room,
+            // the lead-in's and a short last one too. Guessed (~) until Analyse has counted it.
+            bool exact;
+            int songPatterns = SongPatterns(out exact);
+            bool tooLong = fits && songPatterns > patterns * Sp16Project.Scenes;
+            statNeeded.text = count == 0 ? "–" : songPatterns == 0 ? "…" : (exact ? "" : "~") + (4 * songPatterns).ToString(Inv);
+            statNeeded.EnableInClassList("stat__value--bad", tooLong);
 
             bool bad = false;
             if (count == 0)
@@ -968,6 +1063,19 @@ namespace Strands.UI.Source
             {
                 bad = true;
                 summary.text = cannotExport;
+            }
+            else if (TooManyTracksForSong())
+            {
+                bad = true;
+                summary.text = WavToSp16.TooManyTracks(tracks, songPatterns, layout.CanSum);
+            }
+            else if (tooLong)
+            {
+                // Only a guess so far, so Analyse can still be tried: it will count the patterns.
+                bad = true;
+                int most = WavToSp16.MostTracksFor(songPatterns);
+                summary.text = most == 0 ? "Likely too large to fit on SP-16."
+                    : string.Format(Inv, "Likely too large to fit with {0} tracks. Fits with about {1} or fewer. ", tracks, most) + WavToSp16.WhatWouldHelp(layout.CanSum, false);
             }
             else if (layout.EstimatedBytes > Sp16Project.SampleMemoryBytes)
             {

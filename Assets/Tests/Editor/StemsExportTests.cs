@@ -144,7 +144,7 @@ namespace Strands.Tests
                 var layers = new List<ExportLayer>();
                 for (int i = 0; i < 8; i++)
                     layers.Add(make(i));
-                return Assert.Throws<InvalidOperationException>(() => WavToSp16.Plan(wav, "x", new WavExportOptions(), slow, layers)).Message;
+                return Assert.Throws<PlanRefusedException>(() => WavToSp16.Plan(wav, "x", new WavExportOptions(), slow, layers)).Message;
             };
 
             // Each on a stereo output of its own: nothing to sum, but mono would help.
@@ -170,8 +170,13 @@ namespace Strands.Tests
             var fast = new BeatGrid { Bpm = 174, FirstBeatSeconds = 0, DownbeatIndex = 0 };
             var oneBar = new WavExportOptions { BarsPerChunk = 1 };
             Assert.That(WavToSp16.Plan(wav, "x", oneBar, fast).Chunks.Count, Is.EqualTo(73));
-            var tooMany = Assert.Throws<InvalidOperationException>(() => WavToSp16.Plan(wav, "x", oneBar, fast, Layers(4)));
-            Assert.That(tooMany.Message, Is.EqualTo("Too large to fit with 4 tracks. Remove tracks."));
+            var tooMany = Assert.Throws<PlanRefusedException>(() => WavToSp16.Plan(wav, "x", oneBar, fast, Layers(4)));
+            Assert.That(tooMany.Message, Is.EqualTo("Too large to fit with 4 tracks. Fits with 3 or fewer. Remove tracks."));
+            Assert.That(tooMany.PatternsNeeded, Is.EqualTo(73));
+            Assert.That(tooMany.ForPatterns, Is.True);
+            WavExportResult three = WavToSp16.Plan(wav, "x", oneBar, fast, Layers(3));
+            Assert.That(three.Chunks.Count, Is.EqualTo(73));
+            Assert.That(three.PatternsNeeded, Is.EqualTo(73));
 
             // 4-bar chunks at 120 BPM: 13 of them, one to a scene with sixteen layers, but 269 MB of samples.
             var slow = new BeatGrid { Bpm = 120, FirstBeatSeconds = 0, DownbeatIndex = 0 };
@@ -183,7 +188,9 @@ namespace Strands.Tests
                 shares += eight.BytesOfLayer(layer);
             Assert.That(shares, Is.EqualTo(eight.SampleBytes));
             Assert.That(eight.BytesOfLayer(0), Is.EqualTo(eight.SampleBytes / 8));
-            var tooBig = Assert.Throws<InvalidOperationException>(() => WavToSp16.Plan(wav, "x", new WavExportOptions(), slow, Layers(16)));
+            var tooBig = Assert.Throws<PlanRefusedException>(() => WavToSp16.Plan(wav, "x", new WavExportOptions(), slow, Layers(16)));
+            Assert.That(tooBig.ForPatterns, Is.False);
+            Assert.That(tooBig.PatternsNeeded, Is.EqualTo(13));
             // The message counts as the unit does: 256 MB of memory, not 268.
             Assert.That(tooBig.Message, Does.StartWith("Calculated size of ").And.EndWith("MB is too large to fit. Sum stems, use mono, or remove tracks."));
         }
@@ -1479,6 +1486,41 @@ namespace Strands.Tests
             Assert.That(StemsToSp16.Prepare(stems).Warnings, Has.Some.Contains("too loud"));
         }
 
+        [Test]
+        public void MostTracksFor_SharesOutTheScenesPadsAmongThePatterns()
+        {
+            // Sixteen scenes of sixteen pads: a pattern of N tracks leaves room for 16 / N patterns to a scene.
+            Assert.That(WavToSp16.MostTracksFor(1), Is.EqualTo(16));
+            Assert.That(WavToSp16.MostTracksFor(16), Is.EqualTo(16));
+            Assert.That(WavToSp16.MostTracksFor(17), Is.EqualTo(8));
+            Assert.That(WavToSp16.MostTracksFor(27), Is.EqualTo(8));
+            Assert.That(WavToSp16.MostTracksFor(32), Is.EqualTo(8));
+            Assert.That(WavToSp16.MostTracksFor(33), Is.EqualTo(5));
+            Assert.That(WavToSp16.MostTracksFor(64), Is.EqualTo(4));
+            Assert.That(WavToSp16.MostTracksFor(65), Is.EqualTo(3));
+            Assert.That(WavToSp16.MostTracksFor(256), Is.EqualTo(1));
+            Assert.That(WavToSp16.MostTracksFor(257), Is.EqualTo(0));
+            Assert.That(WavToSp16.TooManyTracks(12, 27, true), Is.EqualTo("Too large to fit with 12 tracks. Fits with 8 or fewer. Sum stems or remove tracks."));
+            Assert.That(WavToSp16.TooManyTracks(2, 300, false), Is.EqualTo("Too large to fit on SP-16."));
+        }
 
+        [Test]
+        public void MixOf_AddsFilesOfAnyLengthAndTurnsDownASumThatWouldNotFit()
+        {
+            WavData tone = Tone(Rate, 440, 20000);
+            Assert.That(StemsToSp16.MixOf(new[] { tone }), Is.SameAs(tone));
+
+            WavData quiet = Tone(Rate / 2, 440, 1000);
+            WavData sum = StemsToSp16.MixOf(new[] { quiet, Tone(Rate, 220, 1000) });
+            Assert.That(sum.Frames, Is.EqualTo(Rate));
+            Assert.That(sum.Samples[2 * 100], Is.EqualTo(quiet.Samples[2 * 100] + Tone(Rate, 220, 1000).Samples[2 * 100]));
+
+            // Two at 20000 would reach 40000: the whole is turned down so that its loudest point fits.
+            WavData loud = StemsToSp16.MixOf(new[] { tone, tone });
+            int peak = 0;
+            foreach (short sample in loud.Samples)
+                peak = Math.Max(peak, Math.Abs((int)sample));
+            Assert.That(peak, Is.InRange(32000, 32767));
+        }
     }
 }

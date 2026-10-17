@@ -237,6 +237,24 @@ namespace Strands.Export
         }
     }
 
+    /// <summary>
+    /// A song that does not fit on the unit: more patterns than there is room for with this many
+    /// tracks, or more sample memory than there is.
+    /// </summary>
+    public sealed class PlanRefusedException : InvalidOperationException
+    {
+        /// <summary>How many patterns the song is cut into, the lead-in among them.</summary>
+        public readonly int PatternsNeeded;
+        /// <summary>Whether it was refused for its patterns, and not for its memory.</summary>
+        public readonly bool ForPatterns;
+
+        public PlanRefusedException(string message, int patternsNeeded, bool forPatterns) : base(message)
+        {
+            PatternsNeeded = patternsNeeded;
+            ForPatterns = forPatterns;
+        }
+    }
+
     public sealed class WavExportResult
     {
         public string ProjectName;
@@ -266,6 +284,11 @@ namespace Strands.Export
 
         /// <summary>How many pads a chunk takes.</summary>
         public int SamplesPerChunk { get { return Math.Max(1, Layers.Count); } }
+        /// <summary>
+        /// How many patterns the song is cut into, the lead-in among them, before patterns of
+        /// silence at its end are dropped: what is counted against the room the unit has.
+        /// </summary>
+        public int PatternsNeeded;
         /// <summary>How every sample follows the unit's tempo (<see cref="WavExportOptions.Stretch"/>).</summary>
         public Sp16Stretch Stretch;
         /// <summary>See <see cref="WavExportOptions.TempoInArrangement"/>.</summary>
@@ -609,14 +632,14 @@ namespace Strands.Export
                 boundaries.RemoveAt(boundaries.Count - 1);
             if (boundaries.Count == 0)
                 throw new InvalidOperationException(options.StartBar > 0 || fromBeat ? "No audio left after starting " + (fromBeat ? "beat." : "bar.") : "Audio too short to hold one bar.");
-            if (boundaries.Count > maxChunks)
-                throw new InvalidOperationException(TooLarge(result.Layers));
             boundaries.Add(total);
             leadStart = Math.Min(leadStart, boundaries[0]);
             int leadFrames = boundaries[0] - leadStart;
             bool leadIn = fromFileStart && leadFrames >= MinLeadInSeconds * rate;
-            if (boundaries.Count - 1 + (leadIn ? 1 : 0) > maxChunks)
-                throw new InvalidOperationException(TooLarge(result.Layers));
+            int patternsNeeded = boundaries.Count - 1 + (leadIn ? 1 : 0);
+            if (patternsNeeded > maxChunks)
+                throw new PlanRefusedException(TooLarge(result.Layers, patternsNeeded), patternsNeeded, true);
+            result.PatternsNeeded = patternsNeeded;
 
             int shortest = leadIn ? leadFrames : int.MaxValue;
             for (int i = 0; i + 1 < boundaries.Count; i++)
@@ -690,9 +713,9 @@ namespace Strands.Export
                 DropSilentEnd(result, new[] { blockLevels.GetValue(wav.Samples, samples => new BlockLevels(samples)) });
 
             if (result.SampleBytes > Sp16Project.SampleMemoryBytes)
-                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
+                throw new PlanRefusedException(string.Format(CultureInfo.InvariantCulture,
                     "Calculated size of {0:0.0} MB is too large to fit.", Sp16Project.Megabytes(result.SampleBytes))
-                    + WhatWouldHelp(result.Layers, true));
+                    + WhatWouldHelp(result.Layers, true), result.PatternsNeeded, false);
             // What is left out at the front is said first, then what is put there.
             CultureInfo inv = CultureInfo.InvariantCulture;
             if (fromBeat)
@@ -1001,12 +1024,41 @@ namespace Strands.Export
 
         // Said as a user can act on it: not how many patterns it needed, and not as the song's length,
         // since the cause with stems is the number of tracks (the user, 2026-10-16).
-        static string TooLarge(IList<ExportLayer> layers)
+        static string TooLarge(IList<ExportLayer> layers, int patterns)
         {
             if (layers.Count == 0)
                 return "Too large to fit on SP-16.";
-            return "Too large to fit with " + layers.Count.ToString(CultureInfo.InvariantCulture) + (layers.Count == 1 ? " track." : " tracks.")
-                + WhatWouldHelp(layers, false);
+            bool sum = false;
+            for (int i = 0; i < layers.Count; i++)
+                for (int j = i + 1; j < layers.Count; j++)
+                    if (layers[j].Group == layers[i].Group && layers[j].Output == layers[i].Output)
+                        sum = true;
+            return TooManyTracks(layers.Count, patterns, sum);
+        }
+
+        /// <summary>
+        /// The most tracks a pattern can have for a song of this many patterns to fit: a scene's
+        /// pads are shared out among its patterns, so the more tracks, the fewer patterns. 0 when
+        /// not even one track leaves room for them all.
+        /// </summary>
+        public static int MostTracksFor(int patterns)
+        {
+            int perScene = (Math.Max(1, patterns) + Sp16Project.Scenes - 1) / Sp16Project.Scenes;
+            return perScene > Sp16Project.PadsPerScene ? 0 : Sp16Project.PadsPerScene / perScene;
+        }
+
+        /// <summary>
+        /// Why a song of this many patterns does not fit with this many tracks, and how many it
+        /// fits with (the user, 2026-10-17: making the stems mono brought the memory under the
+        /// limit and the song was still refused, since a mono track takes a pad as a stereo one does).
+        /// </summary>
+        public static string TooManyTracks(int tracks, int patterns, bool canSum)
+        {
+            int most = MostTracksFor(patterns);
+            if (most == 0)
+                return "Too large to fit on SP-16.";
+            return string.Format(CultureInfo.InvariantCulture, "Too large to fit with {0} tracks. Fits with {1} or fewer. ", tracks, most)
+                + WhatWouldHelp(canSum, false);
         }
 
         /// <summary>

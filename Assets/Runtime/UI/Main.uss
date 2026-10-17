@@ -827,6 +827,11 @@
     -unity-font-definition: var(--mono);
 }
 
+/* More bars needed than there is room for */
+.stat__value.stat__value--bad {
+    color: var(--bad);
+}
+
 .stat__caption {
     color: var(--quiet);
     font-size: 12px;

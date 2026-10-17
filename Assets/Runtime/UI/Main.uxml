@@ -57,6 +57,10 @@
           <ui:Label text="bars of room" class="stat__caption" />
         </ui:VisualElement>
         <ui:VisualElement class="stat">
+          <ui:Label name="statNeeded" class="stat__value" />
+          <ui:Label text="bars needed" class="stat__caption" />
+        </ui:VisualElement>
+        <ui:VisualElement class="stat">
           <ui:Label name="statLength" class="stat__value" />
           <ui:Label text="long" class="stat__caption" />
         </ui:VisualElement>
