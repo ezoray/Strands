@@ -100,6 +100,7 @@ namespace Strands.UI.Align
             strip = new SongStripView();
             root.Q("stripHost").Add(strip);
             strip.Clicked += GoTo;
+            strip.PatternChosen += GoToPattern;
             waveform.ViewChanged += () => strip.SetView(waveform.ViewStartSeconds, waveform.ViewEndSeconds);
 
             positionLabel = root.Q<Label>("position");
@@ -943,6 +944,20 @@ namespace Strands.UI.Align
         }
 
         /// <summary>A click or a drag on the strip of the whole song: go to that place, and show the patterns round it close up.</summary>
+        /// <summary>Selects a pattern from the long waveform, with the playhead at its start.</summary>
+        void GoToPattern(int chunk)
+        {
+            WavExportResult plan = session.Plan;
+            if (plan == null)
+                return;
+            followPlayhead = true;
+            Select(chunk, false);
+            wholeScene = false;
+            ShowAround(chunk);
+            // From where the pattern starts, which for a lead-in is the beat line in front of its sound.
+            player.PositionSeconds = (double)plan.Chunks[selected].PatternStartFrame / plan.SampleRate;
+        }
+
         void GoTo(double seconds)
         {
             WavExportResult plan = session.Plan;

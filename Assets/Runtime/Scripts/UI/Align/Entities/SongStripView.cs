@@ -37,6 +37,12 @@ namespace Strands.UI.Align
 
         /// <summary>The user pointed at this time in the song.</summary>
         public event Action<double> Clicked;
+        /// <summary>
+        /// The user pressed a pattern's block, or the name of a scene, which stands for its first
+        /// pattern (the user, 2026-10-17: "when we click on the pattern number above the long
+        /// waveform, have it put the position at the start of that pattern").
+        /// </summary>
+        public event Action<int> PatternChosen;
 
         double DurationSeconds { get { return picture == null ? 0 : (double)picture.Frames / sampleRate; } }
 
@@ -116,6 +122,19 @@ namespace Strands.UI.Align
         {
             if (picture == null || evt.button != 0)
                 return;
+            // Above the waveform: the row of scene names and the row of pattern blocks.
+            if (evt.localPosition.y < NamesHeight + BlocksHeight && PatternChosen != null)
+            {
+                int chunk = ChunkAt(evt.localPosition.x);
+                if (chunk >= 0)
+                {
+                    if (evt.localPosition.y < NamesHeight)
+                        while (chunk > 0 && plan.Chunks[chunk - 1].Scene == plan.Chunks[chunk].Scene)
+                            chunk--;
+                    PatternChosen(chunk);
+                    return;
+                }
+            }
             pointerDown = true;
             this.CapturePointer(evt.pointerId);
             Point(evt.localPosition.x);
@@ -133,6 +152,20 @@ namespace Strands.UI.Align
                 return;
             pointerDown = false;
             this.ReleasePointer(evt.pointerId);
+        }
+
+        /// <summary>The pattern whose block is drawn under this point across the strip, or -1.</summary>
+        int ChunkAt(float x)
+        {
+            if (plan == null)
+                return -1;
+            for (int i = 0; i < plan.Chunks.Count; i++)
+            {
+                ChunkInfo chunk = plan.Chunks[i];
+                if (x >= Mathf.Round(XOf((double)chunk.PatternStartFrame / sampleRate)) && x < Mathf.Round(XOf((double)chunk.EndFrame / sampleRate)))
+                    return i;
+            }
+            return -1;
         }
 
         void Point(float x)
