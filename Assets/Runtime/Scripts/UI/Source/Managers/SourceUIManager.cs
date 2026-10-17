@@ -174,9 +174,13 @@ namespace Strands.UI.Source
                 bands.Clear();
                 sumsThatClip.Clear();
                 app.ForgetProjectName();
-                cannotExport = cannotExportLayout = null;
+                cannotExport = cannotExportLayout = analysedLayout = null;
+                // The analysed song holds every stem, their sum and their waveforms; with no files
+                // left it has nothing to go back to.
+                app.Session = null;
                 ShowError(null);
                 Rebuild();
+                FreeMemory();
             };
             analyse.clicked += Analyse;
             uiState.StateChanged += OnStateChanged;
@@ -263,6 +267,18 @@ namespace Strands.UI.Source
                 ShowError(string.Format(Inv, "{0} holds {1} audio files. Up to {2} can be added at once: choose them with Add files.", Path.GetFileName(folder), paths.Length, MostFilesAtOnce));
             else
                 AddFilesTo(paths, -1, 0);
+        }
+
+        /// <summary>
+        /// Gives back the memory the files and the song held, now that nothing points to them (the
+        /// user, 2026-10-17: Unity apps keep what they have used, so the app looks larger than it
+        /// is). Collecting takes a moment, which a press of Clear can spare.
+        /// </summary>
+        static void FreeMemory()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
         /// <summary>Replaces whatever is loaded with one file, a full song.</summary>

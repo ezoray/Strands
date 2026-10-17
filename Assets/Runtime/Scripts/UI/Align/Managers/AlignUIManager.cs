@@ -289,6 +289,9 @@ namespace Strands.UI.Align
             uiState.SetExportAvailable(false);
             if (player != null)
                 player.Unload();
+            // The pictures hold the song's waveforms; coming back makes them again.
+            waveform.SetSong(null, 44100);
+            strip.SetSong(null, 44100);
         }
 
         void Update()
