@@ -80,6 +80,11 @@ namespace Strands.UI.Source
         // package, so the app stays here, saying why, until the strips change (the user, 2026-10-16).
         string cannotExport;
         string cannotExportLayout;
+        // The strips as they were when the analysis that is kept made its package. While they are
+        // still so, the memory shown is the package's, which leaves out silent samples, and not
+        // the estimate, which counts every sample as long as the song (the user, 2026-10-17: 266 MB
+        // estimated, 254 analysed, and a warning on coming back to this screen).
+        string analysedLayout;
         // The places a dragged card can be dropped: every strip, and each output of a split one.
         readonly List<DropPlace> places = new List<DropPlace>();
         // The card that has the pointer down on it, if any, which is being dragged once it has moved.
@@ -535,13 +540,40 @@ namespace Strands.UI.Source
             if (session.Plan != null)
             {
                 cannotExport = cannotExportLayout = null;
+                analysedLayout = LayoutKey();
                 uiState.Show(UIStates.Align);
                 return;
             }
             cannotExport = session.PlanError;
             cannotExportLayout = LayoutKey();
+            analysedLayout = null;
             jobs.SetIdleMessage("These files cannot be exported");
             Rebuild();
+        }
+
+        /// <summary>
+        /// The package the kept analysis made, while the files and the strips are as they were for
+        /// it; null once anything that bears on the package has changed.
+        /// </summary>
+        WavExportResult AnalysedPlan()
+        {
+            SongSession session = app.Session;
+            return session != null && session.Plan != null && session.FilesVersion == app.Strips.FilesVersion
+                && analysedLayout != null && analysedLayout == LayoutKey() ? session.Plan : null;
+        }
+
+        /// <summary>What a strip's files take of the unit's memory: the analysed package's samples when there is one, otherwise the estimate.</summary>
+        static long BytesOn(StripLayout layout, OutputStrip strip, WavExportResult analysed)
+        {
+            if (analysed == null)
+                return layout.EstimatedBytesOn(strip);
+            if (analysed.Layers.Count == 0)
+                return strip.FileCount > 0 ? analysed.SampleBytes : 0;
+            long bytes = 0;
+            for (int layer = 0; layer < analysed.Layers.Count; layer++)
+                if (analysed.Layers[layer].Group == strip.Pair)
+                    bytes += analysed.BytesOfLayer(layer);
+            return bytes;
         }
 
         /// <summary>Whether the strips are as they were when the last analysis found they make no package.</summary>
@@ -998,11 +1030,11 @@ namespace Strands.UI.Source
                 place.Area.RemoveFromClassList(place.Slot < 0 ? StripDropClass : WellDropClass);
         }
 
-        static string DescribeState(StripLayout layout, OutputStrip strip)
+        string DescribeState(StripLayout layout, OutputStrip strip)
         {
             if (strip.FileCount == 0)
                 return "";
-            string cost = Megabytes(layout.EstimatedBytesOn(strip));
+            string cost = Megabytes(BytesOn(layout, strip, AnalysedPlan()));
             // With everything on master the badge has said where it plays from.
             return layout.IsFullSong ? (layout.AllOnMaster ? "full song  ·  " : "full song, on master  ·  ") + cost : cost;
         }
@@ -1025,9 +1057,10 @@ namespace Strands.UI.Source
 
         void ShowFigures(StripLayout layout)
         {
+            WavExportResult analysed = AnalysedPlan();
             var shares = new List<KeyValuePair<Color, long>>();
             foreach (OutputStrip strip in layout.Strips)
-                shares.Add(new KeyValuePair<Color, long>(layout.IsFullSong ? Theme.WaveAll : Theme.Strip(strip.Pair), layout.EstimatedBytesOn(strip)));
+                shares.Add(new KeyValuePair<Color, long>(layout.IsFullSong ? Theme.WaveAll : Theme.Strip(strip.Pair), BytesOn(layout, strip, analysed)));
             uiState.ShowMemory(shares);
             // This screen has the one key, for Add files, which is not listed.
             uiState.SetShortcuts("");
@@ -1077,7 +1110,7 @@ namespace Strands.UI.Source
                 summary.text = most == 0 ? "Likely too large to fit on SP-16."
                     : string.Format(Inv, "Likely too large to fit with {0} tracks. Fits with about {1} or fewer. ", tracks, most) + WavToSp16.WhatWouldHelp(layout.CanSum, false);
             }
-            else if (layout.EstimatedBytes > Sp16Project.SampleMemoryBytes)
+            else if (analysed == null && layout.EstimatedBytes > Sp16Project.SampleMemoryBytes)
             {
                 bad = true;
                 summary.text = string.Format(Inv, "Needs about {0:0} MB of {1:0}. ",
