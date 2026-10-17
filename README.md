@@ -16,7 +16,7 @@ Strands is a macOS and Windows application, with an untested Linux build, that t
 - **Outputs** — four output strips for outputs 1-2, 3-4, 5-6 and 7-8, a single output as mono, or everything on master
 - **Pads** — see each scene's sixteen pads as the unit lays them out, play them, and set choke groups and loops per stem or per pad, and velocity per stem
 - **Unit settings** — time stretch (Off, M.TMP, RESMPL), arranger on or off, and whether the arrangement carries the song's tempo, remembered from one song to the next
-- **Memory aware** — shows how much of the unit's 256 MB of sample memory the package will use, and leaves out samples that are silent
+- **Fits the unit** — shows how much of the unit's 256 MB of sample memory the package will use and how many bars the song needs against the room there is, from as soon as the files are loaded, and leaves out samples that are silent
 
 ## Screenshots
 

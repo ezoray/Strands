@@ -687,7 +687,7 @@
 
 <ul>
   <li><strong>Stereo or mono.</strong> <span class="ui">1-2 stereo</span> plays the strip's files in stereo on the pair. <span class="ui">1 and 2 mono</span> splits the strip into two outputs, each playing in mono, and each file's card then shows which of the two it goes to (the <span class="ui">to 2</span> button moves it to the other one). Mono uses half the memory, which suits parts that are mono anyway, like most bass lines and kick drums.</li>
-  <li><strong>Separate tracks or Summed tracks.</strong> When a strip has more than one file, it shows a second switch. <span class="ui">Separate tracks</span> keeps each file as its own pad. <span class="ui">Summed tracks</span> mixes them into one, which saves pads and memory. For example, you could put guitars and keys on the same strip and sum them, so they share a mixer channel.</li>
+  <li><strong>Separate tracks or Summed tracks.</strong> When a strip has more than one file, it shows a second switch. <span class="ui">Separate tracks</span> keeps each file as its own pad. <span class="ui">Summed tracks</span> mixes them into one, which saves pads and memory. For example, you could put guitars and keys on the same strip and sum them, so they share a mixer channel. If the files are loud enough together to distort, the strip says <strong>Too loud summed, will distort</strong> as soon as you choose it; use <span class="ui">Separate tracks</span> or turn the files down.</li>
 </ul>
 
 <h3>Moving and removing files</h3>
@@ -695,7 +695,7 @@
 <ul>
   <li>The <span class="ui">←</span> and <span class="ui">→</span> buttons on a file's card move it to the strip on that side.</li>
   <li>You can also drag a card onto another strip. The strip you're over lights up.</li>
-  <li><span class="ui">×</span> removes the file. <span class="ui">Clear</span> removes everything.</li>
+  <li><span class="ui">×</span> removes the file. <span class="ui">Clear</span> removes everything and lets go of the memory the song was using.</li>
   <li>Moving a file adds it to the files already on that strip; it doesn't swap them. To swap two files, move each one.</li>
   <li>Hover over a card to see the file's full name and folder.</li>
 </ul>
@@ -746,7 +746,7 @@
   <li id="a6"><span class="n">6</span>The flag: the pattern Strands counts the others from, usually where the drums come in.</li>
   <li id="a7"><span class="n">7</span><strong>7 ms late</strong>: how far this pattern's drum hits sit from the grid lines, shown at 3 ms or more; you won't hear it when the song plays through, so one marked pattern can be left as it is.</li>
   <li id="a8"><span class="n">8</span>The song, with the beat grid over it. The brighter lines are bar lines; the numbers under them count the bars.</li>
-  <li id="a9"><span class="n">9</span>The whole song, with every scene and pattern. Click or drag on it to jump anywhere.</li>
+  <li id="a9"><span class="n">9</span>The whole song, with every scene and pattern. Click or drag on the waveform to jump anywhere; click a pattern's number to go to the start of that pattern, or a scene's name to go to its first pattern.</li>
   <li id="a10"><span class="n">10</span>Notes about the song, in yellow. Red means it can't be exported yet, and says why.</li>
   <li id="a11"><span class="n">11</span>The tempo, and tools to change it.</li>
   <li id="a12"><span class="n">12</span><strong>Move bar line</strong>: shift the grid earlier or later by a beat, half a beat or a quarter.</li>
@@ -1020,7 +1020,7 @@
 
 <p>Press <span class="ui">Export package</span> (or <kbd>Cmd</kbd>+<kbd>E</kbd> on a Mac, <kbd>Ctrl</kbd>+<kbd>E</kbd> on Windows) and choose where to save it. When it's done, the <strong>Package</strong> panel says where the file went, with a <span class="ui">Show in folder</span> button to find it.</p>
 
-<p>The Package panel also sums up the project: how many patterns and scenes there are, the tempo, the memory used, and which stem comes out of which output.</p>
+<p>The Package panel also sums up the project: how many patterns and scenes there are, the tempo, the memory used, and which stem comes out of which output. Under that come any notes, each on a line of its own.</p>
 
 
 <h2 id="unit" style="--c: var(--periwinkle)">On the unit</h2>
@@ -1037,7 +1037,7 @@
 
 <h2 id="limits" style="--c: var(--paper)">Memory and length</h2>
 
-<p>The SP-16 and DJS-1000 have <strong>256 MB</strong> of memory for samples. The memory meter at the top of every screen shows how much of it your project will use, in the stem colours. It turns red when the project won't fit.</p>
+<p>The SP-16 and DJS-1000 have <strong>256 MB</strong> of memory for samples. The memory meter at the top of every screen shows how much of it your project will use, in the stem colours. It turns red when the project won't fit. On the Source screen it's an estimate until you press <span class="ui">Analyse</span>; after that it shows the package's own figure, which is often a little less because silent samples are left out, until you change the strips.</p>
 
 <ul>
   <li>Four stereo stems use about <strong>40 MB a minute</strong>, so they fit up to about <strong>6 minutes</strong>. A full song as one file uses a quarter of that.</li>
@@ -1130,6 +1130,7 @@
     <tr><td>Waveform, drag</td><td>Move along the song, or move the grid with <span class="ui">Drag grid</span> on</td></tr>
     <tr><td>Pattern on the lane</td><td>Select it</td></tr>
     <tr><td>Song strip, click or drag</td><td>Jump to that part of the song</td></tr>
+    <tr><td>Song strip, click a pattern number or scene name</td><td>Go to the start of that pattern, or of the scene's first pattern</td></tr>
     <tr><td>Pad, click</td><td>Play it from the start</td></tr>
     <tr><td>Pad, <kbd>Shift</kbd> + click, or its ■</td><td>Stop it</td></tr>
     <tr><td>File card, drag</td><td>Move the file to another strip</td></tr>
