@@ -107,7 +107,16 @@ namespace Strands.UI.Source
             public int From;
             /// <summary>The file's name beside the pointer, there once the card is being dragged.</summary>
             public Label Ghost;
+            /// <summary>Where the pointer was last, for scrolling a strip while it is held near an edge.</summary>
+            public Vector2 Last;
+            public IVisualElementScheduledItem Scrolling;
         }
+
+        // How near the top or bottom of a strip's list a dragged card scrolls it, and how fast at the
+        // edge itself, in the panel's units a tick (the user, 2026-10-17: a strip split to mono shows
+        // its second output below the first, out of view, and could not be scrolled to while dragging).
+        const float ScrollEdge = 48, MostScrollPerTick = 14;
+        const long ScrollTickMs = 16;
 
         sealed class Loaded
         {
@@ -1002,9 +1011,49 @@ namespace Strands.UI.Source
             Vector2 at = top.WorldToLocal(pointer);
             drag.Ghost.style.left = at.x + 12;
             drag.Ghost.style.top = at.y + 8;
+            drag.Last = pointer;
+            if (drag.Scrolling == null)
+                drag.Scrolling = drag.Card.schedule.Execute(ScrollWhileDragging).Every(ScrollTickMs);
+            LightPlaceUnder(pointer);
+        }
+
+        void LightPlaceUnder(Vector2 pointer)
+        {
             int over = PlaceAt(pointer);
             for (int i = 0; i < places.Count; i++)
                 places[i].Area.EnableInClassList(places[i].Slot < 0 ? StripDropClass : WellDropClass, i == over && WouldMove(places[i]));
+        }
+
+        /// <summary>
+        /// Scrolls the strip a dragged card is held over when the pointer is near the top or bottom
+        /// of its list, or past them, faster the nearer the edge; then lights what is now under it.
+        /// </summary>
+        void ScrollWhileDragging()
+        {
+            if (drag == null || drag.Ghost == null)
+                return;
+            Vector2 pointer = drag.Last;
+            foreach (ScrollView body in strips.Query<ScrollView>(className: "strip__body").ToList())
+            {
+                Rect view = body.worldBound, strip = body.parent.worldBound;
+                if (pointer.x < view.xMin || pointer.x > view.xMax)
+                    continue;
+                float step = 0;
+                if (pointer.y < view.yMin + ScrollEdge && pointer.y > strip.yMin - ScrollEdge)
+                    step = -MostScrollPerTick * Mathf.Clamp01((view.yMin + ScrollEdge - pointer.y) / ScrollEdge);
+                else if (pointer.y > view.yMax - ScrollEdge)
+                    step = MostScrollPerTick * Mathf.Clamp01((pointer.y - (view.yMax - ScrollEdge)) / ScrollEdge);
+                if (step == 0)
+                    return;
+                float most = Mathf.Max(0, body.contentContainer.layout.height - body.contentViewport.layout.height);
+                Vector2 offset = body.scrollOffset;
+                float y = Mathf.Clamp(offset.y + step, 0, most);
+                if (Mathf.Approximately(y, offset.y))
+                    return;
+                body.scrollOffset = new Vector2(offset.x, y);
+                LightPlaceUnder(pointer);
+                return;
+            }
         }
 
         /// <summary>Whether dropping the dragged card on a place would move it: not on the strip or the output it is on already.</summary>
@@ -1037,6 +1086,8 @@ namespace Strands.UI.Source
             Drag ended = drag;
             // Cleared first: letting go of the pointer comes back here.
             drag = null;
+            if (ended.Scrolling != null)
+                ended.Scrolling.Pause();
             if (ended.Card.HasPointerCapture(ended.Pointer))
                 ended.Card.ReleasePointer(ended.Pointer);
             ended.Card.RemoveFromClassList(DraggingClass);
