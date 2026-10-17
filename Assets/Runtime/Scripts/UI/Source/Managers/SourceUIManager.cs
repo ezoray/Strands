@@ -737,7 +737,7 @@ namespace Strands.UI.Source
             return box;
         }
 
-        /// <summary>Whether the files of a strip go past full scale anywhere when they are summed, on either output of a split strip.</summary>
+        /// <summary>Whether the files of a strip clip for long enough to be heard when they are summed, on either output of a split strip.</summary>
         bool SumClips(StripLayout layout, OutputStrip strip)
         {
             for (int place = 0; place < layout.PlacesOn(strip); place++)
@@ -757,7 +757,7 @@ namespace Strands.UI.Source
             var parts = new short[files.Length][];
             for (int i = 0; i < files.Length; i++)
                 parts[i] = files[i].Audio.Samples;
-            bool clips = StemsToSp16.Clips(parts);
+            bool clips = StemsToSp16.ClipsAudibly(parts);
             sumsThatClip.Add(new KeyValuePair<StripFile[], bool>(files, clips));
             return clips;
         }

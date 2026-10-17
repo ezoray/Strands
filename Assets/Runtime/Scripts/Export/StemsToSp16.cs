@@ -240,7 +240,7 @@ namespace Strands.Export
                 set.Layers.Add(new ExportLayer { Label = mixLabel, Output = output, Group = group });
                 set.LayerSamples.Add(Add(parts, out clipped));
                 set.LayerStems.Add(sharing.ToArray());
-                if (clipped > 0)
+                if (clipped > 0 && ClipsAudibly(parts))
                     set.Warnings.Add(string.Format(CultureInfo.InvariantCulture,
                         "{0} summed are too loud together and will distort. Use Separate tracks, or turn the files down.",
                         string.Join(" and ", mixed.ToArray())));
@@ -497,31 +497,56 @@ namespace Strands.Export
         }
 
         /// <summary>
-        /// Whether audio added together goes past what 16 bits hold anywhere, which is where
-        /// <see cref="Add"/> holds it at the limit and it distorts. Parts shorter than the longest
-        /// count as silence past their end, as they are filled out when the stems are prepared.
+        /// How much clipping can be heard: this many frames held at the limit, on one side, within
+        /// <see cref="ClipWindowFrames"/> (1 ms in any 10 ms). A sum that clips now and then for a
+        /// few samples flattens no more than the tip of a hit, and is not heard (the user,
+        /// 2026-10-17, of drums summed with an instrumental: 969 clips of 0.09 ms at most, and 32
+        /// frames at most in any 10 ms: "I don't hear any issue"). A steady sound only 0.3 dB too
+        /// loud clips a little on every wave, 78 frames in 10 ms at 440 Hz, and is. Claude's figures.
         /// </summary>
-        public static bool Clips(IList<short[]> parts)
+        public const int AudibleClipFrames = 44;
+        public const int ClipWindowFrames = 441;
+
+        /// <summary>
+        /// Whether audio added together goes past what 16 bits hold for enough of the time to be
+        /// heard (<see cref="AudibleClipFrames"/>), where <see cref="Add"/> holds it at the limit and
+        /// it distorts. Parts shorter than the longest count as silence past their end, as they are
+        /// filled out when the stems are prepared.
+        /// </summary>
+        public static bool ClipsAudibly(IList<short[]> parts)
         {
             short[][] arrays = ToArray(parts);
             int length = 0;
             foreach (short[] part in arrays)
                 length = Math.Max(length, part.Length);
+            int frames = length / 2;
+            // Windows overlap by half, so any stretch of half a window is wholly inside one of them.
+            const int hop = ClipWindowFrames / 2;
+            int windows = Math.Max(1, (frames + hop - 1) / hop);
             var clips = new bool[SumBlocks];
             Parallel.For(0, SumBlocks, block =>
             {
-                int from, to;
-                BlockOf(block, length, out from, out to);
-                for (int i = from; i < to; i++)
+                int first = (int)((long)windows * block / SumBlocks), last = (int)((long)windows * (block + 1) / SumBlocks);
+                for (int window = first; window < last; window++)
                 {
-                    int value = 0;
-                    for (int part = 0; part < arrays.Length; part++)
-                        if (i < arrays[part].Length)
-                            value += arrays[part][i];
-                    if (value > short.MaxValue || value < short.MinValue)
+                    int start = window * hop, end = Math.Min(frames, start + ClipWindowFrames);
+                    for (int side = 0; side < 2; side++)
                     {
-                        clips[block] = true;
-                        return;
+                        int count = 0;
+                        for (int frame = start; frame < end; frame++)
+                        {
+                            int sample = 2 * frame + side, value = 0;
+                            for (int part = 0; part < arrays.Length; part++)
+                                if (sample < arrays[part].Length)
+                                    value += arrays[part][sample];
+                            if (value > short.MaxValue || value < short.MinValue)
+                                count++;
+                        }
+                        if (count >= AudibleClipFrames)
+                        {
+                            clips[block] = true;
+                            return;
+                        }
                     }
                 }
             });

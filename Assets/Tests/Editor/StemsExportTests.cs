@@ -1461,29 +1461,56 @@ namespace Strands.Tests
         }
 
         [Test]
-        public void Stems_ClipsSaysWhetherASumGoesPastSixteenBits()
+        public void Stems_ClipsAudiblyOnlyWhenClippingIsDenseEnoughToHear()
         {
-            var loud = new short[] { 0, 0, 20000, -20000, 0, 0 };
-            var quiet = new short[] { 0, 0, 15000, -15000, 0, 0 };
-            Assert.That(StemsToSp16.Clips(new[] { loud, quiet }), Is.True);
-            Assert.That(StemsToSp16.Clips(new[] { quiet, quiet }), Is.False);
+            Func<int, short[]> silence = frames => new short[2 * frames];
+            // Left side held over full scale for this many frames, from frame 1000.
+            Func<int, short[]> burst = frames =>
+            {
+                short[] samples = silence(4000);
+                for (int f = 1000; f < 1000 + frames; f++)
+                    samples[2 * f] = 20000;
+                return samples;
+            };
+            Assert.That(StemsToSp16.ClipsAudibly(new[] { burst(43), burst(43) }), Is.False);
+            Assert.That(StemsToSp16.ClipsAudibly(new[] { burst(44), burst(44) }), Is.True);
+            // Wherever a run falls against the windows it is found.
+            for (int offset = 0; offset < StemsToSp16.ClipWindowFrames; offset += 37)
+            {
+                short[] a = silence(4000);
+                for (int f = 500 + offset; f < 544 + offset; f++)
+                    a[2 * f + 1] = -20000;
+                Assert.That(StemsToSp16.ClipsAudibly(new[] { a, a }), Is.True, "offset " + offset);
+            }
+            // Short clips far apart, as the tips of hits: not heard.
+            short[] hits = silence(44100);
+            for (int f = 0; f < 44100; f += 2205)
+                for (int k = 0; k < 4; k++)
+                    hits[2 * (f + k)] = 20000;
+            Assert.That(StemsToSp16.ClipsAudibly(new[] { hits, hits }), Is.False);
             // The lowest value 16 bits hold is not past them.
-            Assert.That(StemsToSp16.Clips(new[] { new short[] { -16384, -16384 }, new short[] { -16384, -16384 } }), Is.False);
-            Assert.That(StemsToSp16.Clips(new[] { new short[] { 16384, 16384 }, new short[] { 16384, 16384 } }), Is.True);
+            short[] low = silence(1000);
+            for (int i = 0; i < low.Length; i++)
+                low[i] = -16384;
+            Assert.That(StemsToSp16.ClipsAudibly(new[] { low, low }), Is.False);
             // A shorter part counts as silence past its end.
-            Assert.That(StemsToSp16.Clips(new[] { new short[] { 0, 0, 30000, 30000 }, new short[] { 0, 0 } }), Is.False);
-            Assert.That(StemsToSp16.Clips(new[] { new short[] { 30000, 30000, 30000, 30000 }, new short[] { 5000, 0 } }), Is.True);
-            // A pair of files whose loud points never meet does not clip, however loud each is.
-            Assert.That(StemsToSp16.Clips(new[] { new short[] { 32767, 32767, 0, 0 }, new short[] { 0, 0, -32768, -32768 } }), Is.False);
+            Assert.That(StemsToSp16.ClipsAudibly(new[] { burst(100), silence(500) }), Is.False);
 
-            WavData tone = Tone(Rate, 440, 20000);
+            // A steady tone a little too loud clips on every wave, and is heard.
+            WavData tone = Tone(Rate, 440, 17000);
+            short[] both = (short[])tone.Samples.Clone();
+            for (int f = 0; f < Rate; f++)
+                both[2 * f + 1] = both[2 * f];
+            Assert.That(StemsToSp16.ClipsAudibly(new[] { both, both }), Is.True);
             var stems = new List<Stem>
             {
-                new Stem { Name = "A", Audio = tone, Output = Sp16Output.Out12 },
-                new Stem { Name = "B", Audio = tone, Output = Sp16Output.Out12 }
+                new Stem { Name = "A", Audio = new WavData { SampleRate = Rate, Samples = both, SourceChannels = 2, SourceBitsPerSample = 16 }, Output = Sp16Output.Out12 },
+                new Stem { Name = "B", Audio = new WavData { SampleRate = Rate, Samples = both, SourceChannels = 2, SourceBitsPerSample = 16 }, Output = Sp16Output.Out12 }
             };
-            Assert.That(StemsToSp16.Clips(new[] { tone.Samples, tone.Samples }), Is.True);
             Assert.That(StemsToSp16.Prepare(stems).Warnings, Has.Some.Contains("too loud"));
+            stems[1].Audio = new WavData { SampleRate = Rate, Samples = hits.Length == 2 * Rate ? hits : silence(Rate), SourceChannels = 2, SourceBitsPerSample = 16 };
+            stems[0].Audio = stems[1].Audio;
+            Assert.That(StemsToSp16.Prepare(stems).Warnings, Has.None.Contains("too loud"));
         }
 
         [Test]

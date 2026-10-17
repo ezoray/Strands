@@ -732,8 +732,6 @@ namespace Strands.Export
             if (paddedMs >= 0.5)
                 result.Warnings.Add(string.Format(inv, "Padding {0:0} ms of silence to starting {1}.", paddedMs,
                     result.Chunks[0].PatternLength % (Sp16Project.StepsPerBar / BeatsPerBar) == 0 ? "beat" : "step"));
-            if (result.SampleBytes > 0.85 * Sp16Project.SampleMemoryBytes)
-                result.Warnings.Add("Over 85% of SP-16 sample memory. Load on unit from a fresh start.");
             if (grid.BeatsMatched < 16 || grid.BeatsMatched < grid.BeatsInAudio / 4)
                 result.Warnings.Add("Few beats matched. Check tempo.");
             result.TempoWarning = TempoWarningFor(grid.Bpm);
