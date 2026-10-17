@@ -55,6 +55,9 @@ namespace Strands.UI.Source
         // What each file is called on its card when there are several: the part of its name the
         // others do not share, which is what tells them apart and what the Analysis screen calls them.
         readonly Dictionary<StripFile, string> titles = new Dictionary<StripFile, string>();
+        // Whether a set of files summed goes past full scale, for each set asked about, so that a
+        // strip is not added up again every time the screen is drawn.
+        readonly List<KeyValuePair<StripFile[], bool>> sumsThatClip = new List<KeyValuePair<StripFile[], bool>>();
         int namedVersion = -1;
         // What the main button reads when nothing is running, and whether what is running is the analysis.
         string analyseText = "Analyse";
@@ -150,6 +153,7 @@ namespace Strands.UI.Source
                 app.Strips.Clear();
                 peaks.Clear();
                 bands.Clear();
+                sumsThatClip.Clear();
                 app.ForgetProjectName();
                 cannotExport = cannotExportLayout = null;
                 ShowError(null);
@@ -240,6 +244,7 @@ namespace Strands.UI.Source
             app.Strips.Clear();
             peaks.Clear();
             bands.Clear();
+            sumsThatClip.Clear();
             app.ForgetProjectName();
             AddFilesTo(new[] { path }, 0, 0);
         }
@@ -603,11 +608,20 @@ namespace Strands.UI.Source
                 }));
             bool shared = layout.CountIn(strip, 0) > 1 || (split && layout.CountIn(strip, 1) > 1);
             if (shared)
+            {
                 box.Add(Controls.Segmented(new[] { "Separate tracks", "Sum tracks" }, strip.KeepApart ? 0 : 1, chosen =>
                 {
                     strip.KeepApart = chosen == 0;
                     Rebuild();
                 }));
+                // Said here, as soon as the tracks are summed, and not only once they are analysed.
+                if (!strip.KeepApart && SumClips(layout, strip))
+                {
+                    var note = new Label("Too loud summed, will distort");
+                    note.AddToClassList("strip__note");
+                    box.Add(note);
+                }
+            }
 
             var body = new ScrollView(ScrollViewMode.Vertical);
             body.AddToClassList("strip__body");
@@ -633,6 +647,41 @@ namespace Strands.UI.Source
             }
             box.Add(body);
             return box;
+        }
+
+        /// <summary>Whether the files of a strip go past full scale anywhere when they are summed, on either output of a split strip.</summary>
+        bool SumClips(StripLayout layout, OutputStrip strip)
+        {
+            for (int place = 0; place < layout.PlacesOn(strip); place++)
+            {
+                List<StripFile> files = layout.FilesIn(strip, place);
+                if (files.Count > 1 && SumClips(files.ToArray()))
+                    return true;
+            }
+            return false;
+        }
+
+        bool SumClips(StripFile[] files)
+        {
+            foreach (KeyValuePair<StripFile[], bool> known in sumsThatClip)
+                if (SameFiles(known.Key, files))
+                    return known.Value;
+            var parts = new short[files.Length][];
+            for (int i = 0; i < files.Length; i++)
+                parts[i] = files[i].Audio.Samples;
+            bool clips = StemsToSp16.Clips(parts);
+            sumsThatClip.Add(new KeyValuePair<StripFile[], bool>(files, clips));
+            return clips;
+        }
+
+        static bool SameFiles(StripFile[] a, StripFile[] b)
+        {
+            if (a.Length != b.Length)
+                return false;
+            for (int i = 0; i < a.Length; i++)
+                if (a[i] != b[i])
+                    return false;
+            return true;
         }
 
         /// <summary>The small button that adds a file to one output of a split strip.</summary>

@@ -37,8 +37,8 @@ namespace Strands.UI.Export
         [SerializeField] ApplicationManager app;
         [SerializeField] JobManager jobs;
 
-        VisualElement screen, padGrid, stemRows, stretchHost, arrangementHost, arrangementTempoHost;
-        Label padsCount, sceneName, packageFacts, packageNotes, packageWritten;
+        VisualElement screen, padGrid, stemRows, stretchHost, arrangementHost, arrangementTempoHost, packageNotes;
+        Label padsCount, sceneName, packageFacts, packageWritten;
         Button exportButton, scenePrevious, sceneNext, showFolder, stopPads;
         // Plays the pads. It has to be on the listener's object to be heard, which is where the audition is.
         PadPlayer pads;
@@ -77,7 +77,8 @@ namespace Strands.UI.Export
             padsCount = root.Q<Label>("padsCount");
             sceneName = root.Q<Label>("sceneName");
             packageFacts = root.Q<Label>("packageFacts");
-            packageNotes = root.Q<Label>("packageNotes");
+            packageNotes = root.Q("packageNotes");
+            packageNotes.RegisterCallback<GeometryChangedEvent>(_ => FitNotes());
             packageWritten = root.Q<Label>("packageWritten");
             exportButton = root.Q<Button>("export");
             scenePrevious = root.Q<Button>("scenePrevious");
@@ -250,9 +251,9 @@ namespace Strands.UI.Export
         }
 
         /// <summary>
-        /// The waveform a layer's samples are cut from, in its strip's colour: a stem, or the
-        /// tracks of a strip summed, or the song by its low, middle and high sound. Null where a
-        /// layer cannot be matched to audio the session holds.
+        /// The waveform a layer's samples are cut from, in its strip's colour: a stem, the tracks
+        /// of a strip or of one output of a split strip summed, or the song by its low, middle and
+        /// high sound. Null where a layer cannot be matched to audio the session holds.
         /// </summary>
         WavePicture PictureOf(WavExportResult plan, int layer)
         {
@@ -263,17 +264,9 @@ namespace Strands.UI.Export
             {
                 picture = session.Bands == null ? null : WavePicture.OfBands(session.Bands);
             }
-            else
+            else if (layer < session.Stems.LayerStems.Count)
             {
-                int strip = plan.Layers[layer].Group, sharing = 0;
-                foreach (ExportLayer other in plan.Layers)
-                    if (other.Group == strip)
-                        sharing++;
-                // Every stem a track of its own: the layers are the stems, in order.
-                if (plan.Layers.Count == session.Stems.StemLabels.Count)
-                    picture = new WavePicture(session.PeaksOfStem(layer), Theme.Strip(strip));
-                else if (sharing == 1 && session.StemsOnStrip(strip).Count > 0)
-                    picture = new WavePicture(session.PeaksOfStrip(strip), Theme.Strip(strip));
+                picture = new WavePicture(session.PeaksOfLayer(layer), Theme.Strip(plan.Layers[layer].Group));
             }
             pictures[layer] = picture;
             return picture;
@@ -618,11 +611,12 @@ namespace Strands.UI.Export
         {
             showFolder.EnableInClassList(HiddenClass, writtenPath == null);
             packageWritten.text = writtenPath == null ? "" : "Written to " + writtenPath;
+            // Empty, it would still keep a line's room from the notes.
+            packageWritten.EnableInClassList(HiddenClass, writtenPath == null);
             if (plan == null)
             {
                 packageFacts.text = "";
-                packageNotes.text = session.PlanError ?? "";
-                packageNotes.EnableInClassList(BadClass, true);
+                ShowNotes(session.PlanError == null ? new string[0] : new[] { session.PlanError }, true);
                 return;
             }
             int scenes = LastScene + 1;
@@ -641,8 +635,103 @@ namespace Strands.UI.Export
             var notes = new List<string>(plan.Warnings);
             if (plan.TempoWarning != null)
                 notes.Add(plan.TempoWarning + ".");
-            packageNotes.text = string.Join("  ", notes);
-            packageNotes.EnableInClassList(BadClass, false);
+            ShowNotes(notes, false);
+        }
+
+        /// <summary>
+        /// The notes under the package's facts, each starting on a line of its own and wrapping
+        /// as it needs (the user, 2026-10-17: a run of "too loud" warnings as one block was hard
+        /// to read and went off the foot of the screen).
+        /// </summary>
+        void ShowNotes(IList<string> notes, bool bad)
+        {
+            packageNotes.Clear();
+            foreach (string note in notes)
+            {
+                var line = new Label(note) { userData = note };
+                line.AddToClassList("export__note");
+                line.EnableInClassList(BadClass, bad);
+                packageNotes.Add(line);
+            }
+            // Fitted once the new lines are laid out: before then they have no font size to be
+            // measured by, and the notes' room, when it comes out the size it was, says nothing.
+            if (packageNotes.childCount > 0)
+                packageNotes[0].RegisterCallback<GeometryChangedEvent>(FitNotesOnce);
+        }
+
+        void FitNotesOnce(GeometryChangedEvent laidOut)
+        {
+            ((VisualElement)laidOut.target).UnregisterCallback<GeometryChangedEvent>(FitNotesOnce);
+            FitNotes();
+        }
+
+        /// <summary>
+        /// Shows as much of the notes as fits above the panel's foot. Where the text would run past
+        /// it, it is cut after the last word that fits and ends in an ellipsis, and the notes after
+        /// it are not shown. The room the notes have is set by the panel and not by the notes, so
+        /// cutting them never changes it.
+        /// </summary>
+        void FitNotes()
+        {
+            float room = packageNotes.contentRect.height, width = packageNotes.contentRect.width;
+            int count = packageNotes.childCount;
+            if (float.IsNaN(room) || float.IsNaN(width) || width <= 0 || count == 0)
+                return;
+            var tops = new float[count];
+            float top = 0;
+            int cutAt = -1;
+            for (int i = 0; i < count; i++)
+            {
+                var line = (Label)packageNotes[i];
+                line.text = (string)line.userData;
+                line.style.display = DisplayStyle.Flex;
+                tops[i] = top;
+                if (cutAt >= 0)
+                    continue;
+                top += HeightOf(line, line.text, width);
+                if (top > room + 0.5f)
+                    cutAt = i;
+            }
+            if (cutAt < 0)
+                return;
+            // The note that runs past the foot, or the one before when not a word of it fits there.
+            int last = cutAt;
+            while (last >= 0 && !CutToFit((Label)packageNotes[last], room - tops[last], width))
+                last--;
+            for (int i = last + 1; i < count; i++)
+                packageNotes[i].style.display = DisplayStyle.None;
+        }
+
+        static float HeightOf(Label line, string text, float width)
+        {
+            return line.MeasureTextSize(text, width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined).y;
+        }
+
+        /// <summary>Cuts a note to as many of its words as fit in the height given, with an ellipsis after them; false when not one fits.</summary>
+        static bool CutToFit(Label line, float height, float width)
+        {
+            string[] words = ((string)line.userData).Split(' ');
+            int fits = 0, from = 1, to = words.Length;
+            while (from <= to)
+            {
+                int middle = (from + to) / 2;
+                if (HeightOf(line, Words(words, middle), width) <= height + 0.5f)
+                {
+                    fits = middle;
+                    from = middle + 1;
+                }
+                else
+                    to = middle - 1;
+            }
+            if (fits == 0)
+                return false;
+            line.text = Words(words, fits);
+            return true;
+        }
+
+        static string Words(string[] words, int count)
+        {
+            return string.Join(" ", words, 0, count).TrimEnd('.', ',', ' ') + "…";
         }
 
         void Export()
@@ -680,8 +769,7 @@ namespace Strands.UI.Export
                 e =>
                 {
                     jobs.SetIdleMessage("Export failed");
-                    packageNotes.text = "Package could not be written. " + e.Message;
-                    packageNotes.EnableInClassList(BadClass, true);
+                    ShowNotes(new[] { "Package could not be written. " + e.Message }, true);
                 });
         }
     }

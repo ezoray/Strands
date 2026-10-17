@@ -107,6 +107,8 @@ namespace Strands.Applications.Session
         // The stems of a strip added together, for strips that hold several, by the strip's number.
         readonly Dictionary<int, short[]> stripSamples = new Dictionary<int, short[]>();
         readonly Dictionary<int, WaveformPeaks> stripPeaks = new Dictionary<int, WaveformPeaks>();
+        // Layers that are neither one stem nor a whole strip, by the layer's number.
+        readonly Dictionary<int, WaveformPeaks> layerPeaks = new Dictionary<int, WaveformPeaks>();
         // The grid and where the patterns are counted from, as the analysis left them.
         BeatGrid analysedGrid;
         double? analysedAnchor;
@@ -167,6 +169,7 @@ namespace Strands.Applications.Session
             stemPeaks = null;
             stripSamples.Clear();
             stripPeaks.Clear();
+            layerPeaks.Clear();
             mixGain = null;
             Wav = stems.Mix;
             UseTimingStem();
@@ -213,14 +216,11 @@ namespace Strands.Applications.Session
             short[] sum;
             if (stripSamples.TryGetValue(strip, out sum))
                 return sum;
-            sum = new short[Wav.Samples.Length];
-            for (int i = 0; i < sum.Length; i++)
-            {
-                int value = 0;
-                foreach (int stem in stems)
-                    value += Stems.StemSamples[stem][i];
-                sum[i] = (short)Math.Max(short.MinValue, Math.Min(short.MaxValue, value));
-            }
+            var parts = new short[stems.Count][];
+            for (int i = 0; i < parts.Length; i++)
+                parts[i] = Stems.StemSamples[stems[i]];
+            int clipped;
+            sum = StemsToSp16.Add(parts, out clipped);
             stripSamples[strip] = sum;
             return sum;
         }
@@ -267,6 +267,24 @@ namespace Strands.Applications.Session
             foreach (int peak in peaks)
                 most = Math.Max(most, peak);
             return most > short.MaxValue ? (double)short.MaxValue / most : 1.0;
+        }
+
+        /// <summary>
+        /// The waveform of the audio one layer of the package holds: a stem, a strip's stems
+        /// summed, or the stems summed on one output of a split strip.
+        /// </summary>
+        public WaveformPeaks PeaksOfLayer(int layer)
+        {
+            int[] stems = Stems.LayerStems[layer];
+            if (stems.Length == 1)
+                return PeaksOfStem(stems[0]);
+            int strip = StemStrips[stems[0]];
+            if (StemsOnStrip(strip).Count == stems.Length)
+                return PeaksOfStrip(strip);
+            WaveformPeaks peaks;
+            if (!layerPeaks.TryGetValue(layer, out peaks))
+                layerPeaks[layer] = peaks = new WaveformPeaks(Stems.LayerSamples[layer]);
+            return peaks;
         }
 
         /// <summary>The waveform of a strip by itself.</summary>

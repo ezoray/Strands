@@ -623,6 +623,18 @@
     margin-bottom: 10px;
 }
 
+/* Under the strip's switches: why it will not sound as it should */
+.strip__note {
+    flex-shrink: 0;
+    margin: -4px 0 10px 0;
+    padding: 0;
+    color: var(--note);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .strip__body {
     flex-grow: 1;
 }
@@ -1206,6 +1218,7 @@
 
 .export__package {
     flex-grow: 1;
+    overflow: hidden;
 }
 
 .export .unity-button.square {
@@ -1433,14 +1446,27 @@
     white-space: normal;
 }
 
+/* The rest of the panel, whatever the notes say, so that cutting them to fit changes nothing round them */
 .export__notes {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 0;
     margin-top: 6px;
+    overflow: hidden;
+}
+
+/* Each note starts on a line of its own */
+.export__note {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
     color: var(--note);
     font-size: 12px;
     white-space: normal;
 }
 
-.export__notes.warnings--bad {
+.export__note.warnings--bad {
     color: var(--bad);
 }
 

@@ -40,6 +40,8 @@ namespace Strands.Export
         public readonly List<ExportLayer> Layers = new List<ExportLayer>();
         /// <summary>The audio of each layer, in the order of <see cref="Layers"/>.</summary>
         public readonly List<short[]> LayerSamples = new List<short[]>();
+        /// <summary>The stems each layer is made of, as indices into <see cref="StemSamples"/>, in the order of <see cref="Layers"/>.</summary>
+        public readonly List<int[]> LayerStems = new List<int[]>();
         /// <summary>Every stem added together.</summary>
         public WavData Mix;
         public readonly List<string> Warnings = new List<string>();
@@ -204,6 +206,7 @@ namespace Strands.Export
                 {
                     set.Layers.Add(new ExportLayer { Label = labels[s], Output = output, Group = group });
                     set.LayerSamples.Add(audio[s]);
+                    set.LayerStems.Add(new[] { s });
                     continue;
                 }
                 if (taken[s])
@@ -220,6 +223,7 @@ namespace Strands.Export
                 {
                     set.Layers.Add(new ExportLayer { Label = labels[s], Output = output, Group = group });
                     set.LayerSamples.Add(audio[s]);
+                    set.LayerStems.Add(new[] { s });
                     continue;
                 }
                 var parts = new List<short[]>();
@@ -235,6 +239,7 @@ namespace Strands.Export
                 string mixLabel = "Mix" + (onMaster ? (group + 1).ToString(CultureInfo.InvariantCulture) : Sp16Project.OutputName(output).Replace("-", ""));
                 set.Layers.Add(new ExportLayer { Label = mixLabel, Output = output, Group = group });
                 set.LayerSamples.Add(Add(parts, out clipped));
+                set.LayerStems.Add(sharing.ToArray());
                 if (clipped > 0)
                     set.Warnings.Add(string.Format(CultureInfo.InvariantCulture,
                         "{0} summed are too loud together and will distort. Use Separate tracks, or turn the files down.",
@@ -434,24 +439,100 @@ namespace Strands.Export
             return filled;
         }
 
+        // The sums below run over every sample of every stem, so they are written over arrays and
+        // by index, in blocks side by side: a foreach over an IList in the loop made an object for
+        // every sample, and took 20 s for eight stems of 76 s. Each block writes only its own
+        // samples, so the result is the same however the blocks are run.
+        const int SumBlocks = 64;
+
         /// <summary>Adds audio together. A sum that does not fit in 16 bits is held at the limit and counted.</summary>
-        static short[] Add(IList<short[]> parts, out int clipped)
+        public static short[] Add(IList<short[]> parts, out int clipped)
         {
-            var sum = new short[parts[0].Length];
-            clipped = 0;
-            for (int i = 0; i < sum.Length; i++)
+            short[][] arrays = ToArray(parts);
+            var sum = new short[arrays[0].Length];
+            var clippedIn = new int[SumBlocks];
+            Parallel.For(0, SumBlocks, block =>
             {
-                int value = 0;
-                foreach (short[] part in parts)
-                    value += part[i];
-                if (value > short.MaxValue || value < short.MinValue)
+                int from, to, count = 0;
+                BlockOf(block, sum.Length, out from, out to);
+                for (int i = from; i < to; i++)
                 {
-                    clipped++;
-                    value = value > 0 ? short.MaxValue : short.MinValue;
+                    int value = 0;
+                    for (int part = 0; part < arrays.Length; part++)
+                        value += arrays[part][i];
+                    if (value > short.MaxValue || value < short.MinValue)
+                    {
+                        count++;
+                        value = value > 0 ? short.MaxValue : short.MinValue;
+                    }
+                    sum[i] = (short)value;
                 }
-                sum[i] = (short)value;
-            }
+                clippedIn[block] = count;
+            });
+            clipped = 0;
+            foreach (int count in clippedIn)
+                clipped += count;
             return sum;
+        }
+
+        /// <summary>
+        /// Whether audio added together goes past what 16 bits hold anywhere, which is where
+        /// <see cref="Add"/> holds it at the limit and it distorts. Parts shorter than the longest
+        /// count as silence past their end, as they are filled out when the stems are prepared.
+        /// </summary>
+        public static bool Clips(IList<short[]> parts)
+        {
+            short[][] arrays = ToArray(parts);
+            int length = 0;
+            foreach (short[] part in arrays)
+                length = Math.Max(length, part.Length);
+            var clips = new bool[SumBlocks];
+            Parallel.For(0, SumBlocks, block =>
+            {
+                int from, to;
+                BlockOf(block, length, out from, out to);
+                for (int i = from; i < to; i++)
+                {
+                    int value = 0;
+                    for (int part = 0; part < arrays.Length; part++)
+                        if (i < arrays[part].Length)
+                            value += arrays[part][i];
+                    if (value > short.MaxValue || value < short.MinValue)
+                    {
+                        clips[block] = true;
+                        return;
+                    }
+                }
+            });
+            return Array.IndexOf(clips, true) >= 0;
+        }
+
+        /// <summary>The loudest point of audio added together, as a magnitude that may be over 16 bits.</summary>
+        static int PeakOfSum(IList<short[]> parts)
+        {
+            short[][] arrays = ToArray(parts);
+            int length = arrays[0].Length;
+            var peaks = new int[SumBlocks];
+            Parallel.For(0, SumBlocks, block =>
+            {
+                int from, to, peak = 0;
+                BlockOf(block, length, out from, out to);
+                for (int i = from; i < to; i++)
+                {
+                    int value = 0;
+                    for (int part = 0; part < arrays.Length; part++)
+                        value += arrays[part][i];
+                    if (value < 0)
+                        value = -value;
+                    if (value > peak)
+                        peak = value;
+                }
+                peaks[block] = peak;
+            });
+            int most = 0;
+            foreach (int peak in peaks)
+                most = Math.Max(most, peak);
+            return most;
         }
 
         /// <summary>
@@ -460,24 +541,41 @@ namespace Strands.Export
         /// </summary>
         static short[] AddToFit(IList<short[]> parts)
         {
-            int peak = 0;
-            for (int i = 0; i < parts[0].Length; i++)
-            {
-                int value = 0;
-                foreach (short[] part in parts)
-                    value += part[i];
-                peak = Math.Max(peak, Math.Abs(value));
-            }
+            short[][] arrays = ToArray(parts);
+            int peak = PeakOfSum(arrays);
             double gain = peak > short.MaxValue ? (double)short.MaxValue / peak : 1.0;
-            var sum = new short[parts[0].Length];
-            for (int i = 0; i < sum.Length; i++)
+            var sum = new short[arrays[0].Length];
+            Parallel.For(0, SumBlocks, block =>
             {
-                int value = 0;
-                foreach (short[] part in parts)
-                    value += part[i];
-                sum[i] = gain == 1.0 ? (short)value : (short)Math.Round(value * gain);
-            }
+                int from, to;
+                BlockOf(block, sum.Length, out from, out to);
+                for (int i = from; i < to; i++)
+                {
+                    int value = 0;
+                    for (int part = 0; part < arrays.Length; part++)
+                        value += arrays[part][i];
+                    sum[i] = gain == 1.0 ? (short)value : (short)Math.Round(value * gain);
+                }
+            });
             return sum;
+        }
+
+        static short[][] ToArray(IList<short[]> parts)
+        {
+            var arrays = parts as short[][];
+            if (arrays != null)
+                return arrays;
+            arrays = new short[parts.Count][];
+            parts.CopyTo(arrays, 0);
+            return arrays;
+        }
+
+        /// <summary>The samples one block of a sum covers. Blocks start on a frame, so a frame is never split.</summary>
+        static void BlockOf(int block, int length, out int from, out int to)
+        {
+            int frames = length / 2;
+            from = (int)((long)frames * block / SumBlocks) * 2;
+            to = block == SumBlocks - 1 ? length : (int)((long)frames * (block + 1) / SumBlocks) * 2;
         }
     }
 }

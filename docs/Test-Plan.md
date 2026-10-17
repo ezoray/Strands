@@ -142,6 +142,9 @@ Start the app from Finder, not from the Editor.
 | B63 | Set Time stretch, both arrangement switches and Choke, Loop and Velocity for each strip. Quit, reopen, load other stems and Analyse | The Export page starts as it was left, strip by strip; a pad set by itself does not carry over |
 | B64 | A song in one file, Export page | No Song label; Choke group, Loop and Velocity start at the panel's left; the groups below are evenly spaced |
 | B65 | Load more than fits: stems on separate tracks; then the same with strips summed and split to mono; then on Master | Analyse stays on Source with "Calculated size of … is too large to fit." in red, and the advice names only what would help: no "Sum stems" when nothing can be summed, no "use mono" on Master or when every strip is mono |
+| B66 | Load the same stems twice (two files on each strip). Set Drums to Sum tracks, then Other; then split a strip to mono with two files on one output, summed | "Too loud summed, will distort" under the switch of each strip whose files clip together, as soon as Sum is chosen, and gone with Separate tracks; none on a strip whose sum fits |
+| B67 | With B66 loaded, two strips summed and two on Separate tracks: Analyse, then the Export page | Analyse takes a few seconds, not tens of seconds; every pad with a sample shows its waveform, summed strips and separate tracks alike |
+| B68 | Load the same stems four times, split every strip to mono and sum each output; Analyse, then the Export page | Under Package each note starts on a line of its own and wraps; nothing runs past the panel's foot: where the text would, it stops after the last word that fits with "…"; after Export package, "Written to …" still shows at the foot |
 
 ## C. Windows build
 

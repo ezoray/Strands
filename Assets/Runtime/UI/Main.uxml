@@ -259,7 +259,7 @@
               <ui:Button name="showFolder" text="Show in folder" class="small last hidden" />
             </ui:VisualElement>
             <ui:Label name="packageFacts" class="export__facts" />
-            <ui:Label name="packageNotes" class="export__notes" />
+            <ui:VisualElement name="packageNotes" class="export__notes" />
             <ui:Label name="packageWritten" class="export__written" />
           </ui:VisualElement>
         </ui:VisualElement>

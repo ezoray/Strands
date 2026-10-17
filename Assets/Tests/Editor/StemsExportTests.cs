@@ -1407,5 +1407,78 @@ namespace Strands.Tests
                 Assert.That(stems[i].Audio.Frames, Is.GreaterThan(0));
             }
         }
+
+        [Test]
+        public void Stems_EachLayerKnowsWhichStemsItIsMadeOf()
+        {
+            WavData tone = Tone(Rate, 440, 3000);
+            var source = new List<Stem>
+            {
+                new Stem { Name = "Kick", Audio = tone, Output = Sp16Output.Out12, Group = 0 },
+                new Stem { Name = "Snare", Audio = tone, Output = Sp16Output.Out12, Group = 0 },
+                new Stem { Name = "Bass", Audio = tone, Output = Sp16Output.Out34, Group = 1, KeepApart = true },
+                new Stem { Name = "Sub", Audio = tone, Output = Sp16Output.Out34, Group = 1, KeepApart = true },
+                new Stem { Name = "Hats", Audio = tone, Output = Sp16Output.Out12, Group = 0 }
+            };
+            StemSet set = StemsToSp16.Prepare(source);
+            Assert.That(set.Layers.ConvertAll(layer => layer.Label), Is.EqualTo(new[] { "Mix12", "Bass", "Sub" }));
+            Assert.That(set.LayerStems, Is.EqualTo(new[] { new[] { 0, 1, 4 }, new[] { 2 }, new[] { 3 } }));
+            Assert.That(StemsToSp16.Prepare(source, false).LayerStems, Is.EqualTo(new[] { new[] { 0 }, new[] { 1 }, new[] { 2 }, new[] { 3 }, new[] { 4 } }));
+        }
+
+        [Test]
+        public void Stems_SummingIsTheSameSampleForSampleAsAddingThemOneByOne()
+        {
+            // Sums are made in blocks side by side; every sample must come out as a plain sum,
+            // held at the limit, would make it. Odd lengths so that no block ends neatly.
+            var random = new Random(7);
+            var parts = new short[3][];
+            for (int p = 0; p < parts.Length; p++)
+            {
+                parts[p] = new short[2 * 10007];
+                for (int i = 0; i < parts[p].Length; i++)
+                    parts[p][i] = (short)random.Next(short.MinValue, short.MaxValue + 1);
+            }
+            int clipped;
+            short[] sum = StemsToSp16.Add(parts, out clipped);
+            int expectedClipped = 0;
+            for (int i = 0; i < sum.Length; i++)
+            {
+                int value = parts[0][i] + parts[1][i] + parts[2][i];
+                if (value > short.MaxValue || value < short.MinValue)
+                    expectedClipped++;
+                Assert.That(sum[i], Is.EqualTo((short)Math.Max(short.MinValue, Math.Min(short.MaxValue, value))), "sample " + i);
+            }
+            Assert.That(clipped, Is.EqualTo(expectedClipped));
+            Assert.That(clipped, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void Stems_ClipsSaysWhetherASumGoesPastSixteenBits()
+        {
+            var loud = new short[] { 0, 0, 20000, -20000, 0, 0 };
+            var quiet = new short[] { 0, 0, 15000, -15000, 0, 0 };
+            Assert.That(StemsToSp16.Clips(new[] { loud, quiet }), Is.True);
+            Assert.That(StemsToSp16.Clips(new[] { quiet, quiet }), Is.False);
+            // The lowest value 16 bits hold is not past them.
+            Assert.That(StemsToSp16.Clips(new[] { new short[] { -16384, -16384 }, new short[] { -16384, -16384 } }), Is.False);
+            Assert.That(StemsToSp16.Clips(new[] { new short[] { 16384, 16384 }, new short[] { 16384, 16384 } }), Is.True);
+            // A shorter part counts as silence past its end.
+            Assert.That(StemsToSp16.Clips(new[] { new short[] { 0, 0, 30000, 30000 }, new short[] { 0, 0 } }), Is.False);
+            Assert.That(StemsToSp16.Clips(new[] { new short[] { 30000, 30000, 30000, 30000 }, new short[] { 5000, 0 } }), Is.True);
+            // A pair of files whose loud points never meet does not clip, however loud each is.
+            Assert.That(StemsToSp16.Clips(new[] { new short[] { 32767, 32767, 0, 0 }, new short[] { 0, 0, -32768, -32768 } }), Is.False);
+
+            WavData tone = Tone(Rate, 440, 20000);
+            var stems = new List<Stem>
+            {
+                new Stem { Name = "A", Audio = tone, Output = Sp16Output.Out12 },
+                new Stem { Name = "B", Audio = tone, Output = Sp16Output.Out12 }
+            };
+            Assert.That(StemsToSp16.Clips(new[] { tone.Samples, tone.Samples }), Is.True);
+            Assert.That(StemsToSp16.Prepare(stems).Warnings, Has.Some.Contains("too loud"));
+        }
+
+
     }
 }
