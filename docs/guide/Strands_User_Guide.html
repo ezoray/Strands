@@ -662,7 +662,7 @@
   <ol>
     <li><strong>One file is a song.</strong> It plays from the master output, whichever strip it's on, and its waveform is drawn in several colours: <span style="color: var(--band-low)">violet</span> for the low sounds, <span style="color: var(--band-mid)">pink</span> for the middle and white for the highs.</li>
     <li><strong>More than one file is stems, always.</strong> Each strip has its own colour and plays from its own outputs (or from master, if you choose Master).</li>
-    <li><strong>Every file is a track of its own</strong>, unless its strip is set to <span class="ui">Sum tracks</span>.</li>
+    <li><strong>Every file is a track of its own</strong>, unless its strip is set to <span class="ui">Summed tracks</span>.</li>
   </ol>
 </div>
 
@@ -687,7 +687,7 @@
 
 <ul>
   <li><strong>Stereo or mono.</strong> <span class="ui">1-2 stereo</span> plays the strip's files in stereo on the pair. <span class="ui">1 and 2 mono</span> splits the strip into two outputs, each playing in mono, and each file's card then shows which of the two it goes to (the <span class="ui">to 2</span> button moves it to the other one). Mono uses half the memory, which suits parts that are mono anyway, like most bass lines and kick drums.</li>
-  <li><strong>Separate tracks or Sum tracks.</strong> When a strip has more than one file, it shows a second switch. <span class="ui">Separate tracks</span> keeps each file as its own pad. <span class="ui">Sum tracks</span> mixes them into one, which saves pads and memory. For example, you could put guitars and keys on the same strip and sum them, so they share a mixer channel.</li>
+  <li><strong>Separate tracks or Summed tracks.</strong> When a strip has more than one file, it shows a second switch. <span class="ui">Separate tracks</span> keeps each file as its own pad. <span class="ui">Summed tracks</span> mixes them into one, which saves pads and memory. For example, you could put guitars and keys on the same strip and sum them, so they share a mixer channel.</li>
 </ul>
 
 <h3>Moving and removing files</h3>
@@ -702,7 +702,7 @@
 
 <h3>The foot of the screen</h3>
 
-<p>The panel at the bottom says how the project will be laid out: how many tracks each pattern has, how many patterns fit in a scene, how many bars of room there are and how long the song is. If something stops you going on, it says why in red: for example, more than 16 tracks, or more audio than fits in the unit's memory.</p>
+<p>The panel at the bottom says how the project will be laid out: how many tracks each pattern has, how many patterns fit in a scene, how many bars of room there are, how many bars the song needs and how long it is. The bars needed is an estimate, marked <strong>~</strong>, until you press <span class="ui">Analyse</span>. If something stops you going on, it says why in red: for example, more than 16 tracks, more audio than fits in the unit's memory, or a song that needs more bars than there's room for.</p>
 
 <p>When you're ready, press <span class="ui">Analyse</span>. If you come back to this screen later and only move files between strips or change the outputs, Strands keeps the beat grid you've already checked, so there's nothing to redo.</p>
 
@@ -1045,7 +1045,7 @@
   <li>Silent samples are left out automatically and use no memory.</li>
 </ul>
 
-<p>There's also a limit on length: a project holds 16 scenes. With four stems that's 64 patterns of 4 bars, or 256 bars, which is about 8 minutes at 130 BPM. The foot of the Source screen shows the bars of room, and the top of the Patterns panel shows how many you're using.</p>
+<p>There's also a limit on length: a project holds 16 scenes. With four stems that's 64 patterns of 4 bars, or 256 bars, which is about 8 minutes at 130 BPM. The more tracks each pattern has, the fewer patterns fit in a scene, so a long song may only fit with fewer tracks. The foot of the Source screen shows the bars of room beside the bars the song needs, in red when it won't fit, and says how many tracks it fits with. Mono saves memory but not pads, so it doesn't help here. The top of the Patterns panel shows how many bars you're using.</p>
 
 <p>The units play between <strong>60 and 220 BPM</strong>. If the tempo is outside that range, a note in yellow beside <strong>Tempo (BPM)</strong> says so. The song can still be exported, but it won't play in time on the unit.</p>
 
@@ -1053,7 +1053,7 @@
 <h2 id="help" style="--c: var(--paper)">Problems and questions</h2>
 
 <h4>Analyse is dimmed</h4>
-<p>The foot of the Source screen says why in red. Either there are more than 16 tracks, or the last analysis found the project needs more memory or more patterns than the unit has. Set a strip to <span class="ui">Sum tracks</span> or to mono, or remove some files, and <span class="ui">Analyse</span> comes back on. The beat grid is kept, so it goes straight to the Analysis screen.</p>
+<p>The foot of the Source screen says why in red. Either there are more than 16 tracks, or the last analysis found the project needs more memory or more patterns than the unit has. Set a strip to <span class="ui">Summed tracks</span> or remove some files, and <span class="ui">Analyse</span> comes back on. Mono also helps when the problem is memory, but not when the song has too many tracks for its length. The beat grid is kept, so it goes straight to the Analysis screen.</p>
 
 <h4>The notes under the waveform are red</h4>
 <p>The song can't be exported as it is, and the note says why: usually a change of tempo has made it too large to fit, in memory or in patterns. See <a href="#limits">Memory and length</a>.</p>

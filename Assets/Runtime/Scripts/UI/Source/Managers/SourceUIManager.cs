@@ -745,7 +745,7 @@ namespace Strands.UI.Source
             bool shared = layout.CountIn(strip, 0) > 1 || (split && layout.CountIn(strip, 1) > 1);
             if (shared)
             {
-                box.Add(Controls.Segmented(new[] { "Separate tracks", "Sum tracks" }, strip.KeepApart ? 0 : 1, chosen =>
+                box.Add(Controls.Segmented(new[] { "Separate tracks", "Summed tracks" }, strip.KeepApart ? 0 : 1, chosen =>
                 {
                     strip.KeepApart = chosen == 0;
                     Rebuild();
