@@ -38,6 +38,12 @@ namespace Strands.Export
         /// </summary>
         public bool TrimLeadingSilence;
         /// <summary>
+        /// Refuse audio that never rises above -40 dBFS, or stems none of which does: there is
+        /// nothing to export (<see cref="WavToSp16.SilentMessage"/>). On in the app; off by default
+        /// so that a layout can be tried on audio of nothing but zeros.
+        /// </summary>
+        public bool RefuseSilence;
+        /// <summary>
         /// A beat line to start the package on, counted from the first bar line (so one in front
         /// of it is negative), with everything before it left out: beats dropped from the front of
         /// the lead-in, or of the song. What lies between that beat and the next start of a pattern
@@ -543,6 +549,27 @@ namespace Strands.Export
             return Plan(wav, projectName, options, BeatGridAnalyzer.Analyze(wav.Samples, wav.SampleRate, options.Grid));
         }
 
+        /// <summary>Why audio that is silent from end to end is refused.</summary>
+        public const string SilentMessage = "Audio is silent. Nothing to export.";
+
+        /// <summary>
+        /// Whether there is nothing to export: the song never rises above -40 dBFS, or, for
+        /// stems, none of them does (<see cref="LeadingSilence.IsSilentThroughout"/>). A song in
+        /// one file has no other layer to keep, so it is refused where a silent stem is left out
+        /// (the user, 2026-10-18, of a separator's empty vocal stem loaded by itself).
+        /// </summary>
+        static bool IsSilentThroughout(WavData wav, IList<short[]> layerSamples)
+        {
+            if (blockLevels.GetValue(wav.Samples, samples => new BlockLevels(samples)).IsSilentThroughout)
+                return true;
+            if (layerSamples == null || layerSamples.Count == 0)
+                return false;
+            foreach (short[] layer in layerSamples)
+                if (!blockLevels.GetValue(layer, samples => new BlockLevels(samples)).IsSilentThroughout)
+                    return false;
+            return true;
+        }
+
         public static void CheckSampleRate(WavData wav)
         {
             if (wav.SampleRate != Sp16SampleRate)
@@ -571,6 +598,8 @@ namespace Strands.Export
                 throw new ArgumentException("A chunk takes a pad for each layer, and a scene has " + Sp16Project.PadsPerScene + " pads.", "layers");
             if (layers != null)
                 CheckOutputs(layers);
+            if (options.RefuseSilence && IsSilentThroughout(wav, layerSamples))
+                throw new InvalidOperationException(SilentMessage);
 
             var result = new WavExportResult
             {

@@ -78,8 +78,9 @@ namespace Strands.UI.Shared
                 layers[i].Range(0, layers[i].Frames, out min, out max);
                 loudest = Mathf.Max(loudest, Mathf.Max(-min, max));
             }
-            if (loudest > 0.0001f)
-                gain = Headroom / loudest;
+            // A track that never rises above -40 dBFS is silent, and is drawn as a flat line: not
+            // drawn up, and not as the specks its few loudest samples would make.
+            gain = loudest > LeadingSilence.SilentTrackLevel ? Headroom / loudest : 0;
         }
 
         /// <summary>One song by itself, coloured by its sound: the kick and the bass, the body of the music, and the hats.</summary>

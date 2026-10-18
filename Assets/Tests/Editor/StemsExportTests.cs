@@ -805,6 +805,50 @@ namespace Strands.Tests
         }
 
         [Test]
+        public void S5_Stems_ALayerThatNeverRisesAbove40dBUnderFullScaleHasNoSamples()
+        {
+            // A separator's vocal stem of a song with no vocals: residue peaking at -44 dBFS.
+            // Against its own peak it looks like music; it is silent. A stem peaking at -38 dBFS
+            // is quiet, and keeps its samples.
+            List<Stem> source = FourStems(40);
+            ScaleToPeak(source[3], 300);
+            ScaleToPeak(source[2], 400);
+            StemSet stems = StemsToSp16.Prepare(source);
+            WavExportResult plan = stems.Plan("Stems", new WavExportOptions(), Grid128());
+            Assert.That(plan.Chunks.Count, Is.EqualTo(6));
+            for (int i = 0; i < plan.Chunks.Count; i++)
+                for (int layer = 0; layer < 4; layer++)
+                    Assert.That(plan.Chunks[i].FileNames[layer] == null, Is.EqualTo(layer == 3), "chunk " + i + ", layer " + layer);
+        }
+
+        [Test]
+        public void S5_ASongThatNeverRisesAbove40dBUnderFullScaleIsRefused()
+        {
+            // A separator's empty vocal stem loaded by itself is a song with nothing in it.
+            List<Stem> source = FourStems(40);
+            ScaleToPeak(source[3], 300);
+            var refused = Assert.Throws<InvalidOperationException>(() => WavToSp16.Plan(source[3].Audio, "Song", new WavExportOptions { RefuseSilence = true }, Grid128()));
+            Assert.That(refused.Message, Is.EqualTo(WavToSp16.SilentMessage));
+            // Stems that are all silent are refused too.
+            foreach (Stem stem in source)
+                ScaleToPeak(stem, 60);
+            StemSet stems = StemsToSp16.Prepare(source);
+            Assert.Throws<InvalidOperationException>(() => stems.Plan("Stems", new WavExportOptions { RefuseSilence = true }, Grid128()));
+            // Without the option it is laid out as it is.
+            Assert.That(stems.Plan("Stems", new WavExportOptions(), Grid128()).Chunks.Count, Is.GreaterThan(0));
+        }
+
+        static void ScaleToPeak(Stem stem, int peak)
+        {
+            short[] samples = stem.Audio.Samples;
+            int own = 0;
+            foreach (short sample in samples)
+                own = Math.Max(own, Math.Abs((int)sample));
+            for (int i = 0; i < samples.Length; i++)
+                samples[i] = (short)Math.Round((double)samples[i] * peak / own);
+        }
+
+        [Test]
         public void S5_Stems_PatternsOfSilenceAtTheEndAreDropped()
         {
             // Chunks start at 0.25 s and every 7.5 s after. Nothing sounds from 23 s on, so the

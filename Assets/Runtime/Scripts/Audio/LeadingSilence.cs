@@ -25,6 +25,21 @@ namespace Strands.Audio
         // really played, a shaker under a loud kick, is faint too, but it goes on, and its average
         // is some 10 dB above this.
         const int AsGoodAsSilentBelowPeak = 316;
+        // A track whose loudest sample is this low (-40 dBFS) is silent from end to end: a
+        // separator's vocal stem of a song with no vocals peaked at -44 dBFS and averaged -79.
+        // Measured against its own peak it looked like music throughout, was drawn as a full
+        // waveform and was exported (the user, 2026-10-18: "we shouldn't boost silence or near
+        // silence, and we definately shouldn't be including it in export").
+        const int SilentTrackPeak = 327;
+
+        /// <summary>Whether a track whose loudest sample is <paramref name="peak"/> is silent from end to end.</summary>
+        public static bool IsSilentThroughout(int peak)
+        {
+            return peak <= SilentTrackPeak;
+        }
+
+        /// <summary>The level, as a part of full scale, at or under which a whole track is silent: -40 dBFS.</summary>
+        public static float SilentTrackLevel { get { return SilentTrackPeak / 32768f; } }
 
         /// <summary>The level at or under which a sample is silence, in audio whose loudest sample is <paramref name="peak"/>.</summary>
         public static int SilenceLevel(int peak)
@@ -93,6 +108,9 @@ namespace Strands.Audio
 
         public int Frames { get { return samples.Length / 2; } }
 
+        /// <summary>Whether the whole of it is silent: its loudest sample is -40 dBFS or under.</summary>
+        public bool IsSilentThroughout { get { return LeadingSilence.IsSilentThroughout(Peak); } }
+
         public BlockLevels(short[] interleavedStereo)
         {
             samples = interleavedStereo;
@@ -126,7 +144,7 @@ namespace Strands.Audio
         /// <summary>Whether there is nothing but silence from one frame up to another.</summary>
         public bool IsSilent(int fromFrame, int toFrame)
         {
-            return LoudestBetween(fromFrame, toFrame) <= LeadingSilence.SilenceLevel(Peak);
+            return IsSilentThroughout || LoudestBetween(fromFrame, toFrame) <= LeadingSilence.SilenceLevel(Peak);
         }
 
         /// <summary>The average level (root mean square) of the samples from one frame up to another.</summary>
@@ -158,7 +176,8 @@ namespace Strands.Audio
         public bool IsAsGoodAsSilent(int fromFrame, int toFrame)
         {
             int level = LoudestBetween(fromFrame, toFrame);
-            return level <= LeadingSilence.SilenceLevel(Peak)
+            return IsSilentThroughout
+                || level <= LeadingSilence.SilenceLevel(Peak)
                 || (level <= LeadingSilence.FaintLevel(Peak) && AverageBetween(fromFrame, toFrame) <= LeadingSilence.AsGoodAsSilentLevel(Peak));
         }
 

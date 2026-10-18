@@ -134,7 +134,7 @@ namespace Strands.Applications.Session
             TimingSamples = wav.Samples;
             meter = new BeatDriftMeter(wav.Samples, wav.SampleRate);
             // Play the whole file unless the user chooses a later beat or bar.
-            Options = new WavExportOptions { KeepLeadIn = true, TrimLeadingSilence = true, SliceOnBeats = true };
+            Options = new WavExportOptions { KeepLeadIn = true, TrimLeadingSilence = true, RefuseSilence = true, SliceOnBeats = true };
             ProjectName = WavToSp16.SanitizeName(songName, MaxNameLength);
         }
 
@@ -148,7 +148,7 @@ namespace Strands.Applications.Session
             Wav = stems.Mix;
             TimingSamples = Wav.Samples;
             meter = new BeatDriftMeter(Wav.Samples, Wav.SampleRate);
-            Options = new WavExportOptions { KeepLeadIn = true, TrimLeadingSilence = true, SliceOnBeats = true };
+            Options = new WavExportOptions { KeepLeadIn = true, TrimLeadingSilence = true, RefuseSilence = true, SliceOnBeats = true };
             ProjectName = WavToSp16.SanitizeName(songName, MaxNameLength);
             // Every stem is in the picture of the whole song, so they are made here, away from the screen,
             // and so is the level a set of strips is played at.

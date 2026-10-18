@@ -198,7 +198,7 @@ namespace Strands.Editor
             stems = StemsToSp16.Prepare(read, !keepApart);
 
             // The same choices the app makes for a song (SongSession).
-            var options = new WavExportOptions { CrossfadeMs = crossfadeMs, KeepLeadIn = true, TrimLeadingSilence = true, SliceOnBeats = true, Stretch = extras.Stretch,
+            var options = new WavExportOptions { CrossfadeMs = crossfadeMs, KeepLeadIn = true, TrimLeadingSilence = true, RefuseSilence = true, SliceOnBeats = true, Stretch = extras.Stretch,
                 Arrangement = extras.Arrangement, TempoInArrangement = extras.TempoInArrangement,
                 LoopFadeOutMs = extras.LoopFadeOutMs, LoopFadeInMs = extras.LoopFadeInMs };
             options.Pads.CopyFrom(extras.Pads);
