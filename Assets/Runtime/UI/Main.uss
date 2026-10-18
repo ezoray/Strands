@@ -110,6 +110,12 @@
     --unity-cursor-color: rgba(0, 0, 0, 0);
 }
 
+/* Unity puts the cursor of an empty box 6.6 units above where it is once there is text (it
+   ignores the text's middle alignment), so an empty box's text area is lowered by that much. */
+.text-field--empty .unity-text-element--inner-input-field-component {
+    padding-top: 6.6px;
+}
+
 .unity-progress-bar__background {
     border-width: 0;
     border-radius: 3px;

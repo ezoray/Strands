@@ -166,6 +166,7 @@ namespace Strands.UI.Shared
 
         const long CursorBlinkMs = 530;
         const string CursorOffClass = "cursor--off";
+        const string EmptyClass = "text-field--empty";
 
         static void BlinkCursor(TextField field)
         {
@@ -177,7 +178,12 @@ namespace Strands.UI.Shared
                     blink.Pause();
                 blink = field.schedule.Execute(() => field.ToggleInClassList(CursorOffClass)).Every(CursorBlinkMs).StartingIn(CursorBlinkMs);
             };
-            field.RegisterCallback<FocusInEvent>(_ => show());
+            // An empty box draws its cursor too high; the stylesheet lowers it (text-field--empty).
+            Action markEmpty = () => field.EnableInClassList(EmptyClass, string.IsNullOrEmpty(field.text));
+            markEmpty();
+            field.RegisterValueChangedCallback(_ => markEmpty());
+            field.RegisterCallback<InputEvent>(_ => field.schedule.Execute(markEmpty));
+            field.RegisterCallback<FocusInEvent>(_ => { markEmpty(); show(); });
             field.RegisterCallback<KeyDownEvent>(_ => show());
             field.RegisterCallback<FocusOutEvent>(_ =>
             {
