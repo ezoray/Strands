@@ -281,13 +281,26 @@ namespace Strands.UI.Source
         /// <summary>
         /// Gives back the memory the files and the song held, now that nothing points to them (the
         /// user, 2026-10-17: Unity apps keep what they have used, so the app looks larger than it
-        /// is). Collecting takes a moment, which a press of Clear can spare.
+        /// is). Unity keeps its managed heap at the largest it has been, and only hands an empty
+        /// part of it back to the system once it has stayed empty through several collections,
+        /// about six; so it is collected once a frame for a few frames. Measured on 2026-10-18 with
+        /// 13 long stems: two collections gave nothing back, ten gave back about 500 MB.
         /// </summary>
-        static void FreeMemory()
+        void FreeMemory()
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            StartCoroutine(CollectOverFrames(ClearCollections));
+        }
+
+        const int ClearCollections = 10;
+
+        static System.Collections.IEnumerator CollectOverFrames(int times)
+        {
+            for (int i = 0; i < times; i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                yield return null;
+            }
         }
 
         /// <summary>Replaces whatever is loaded with one file, a full song.</summary>
@@ -352,6 +365,9 @@ namespace Strands.UI.Source
                             if (paths.Length == 1)
                                 loaded.Bands[file] = new BandPeaks(wav.Samples, wav.SampleRate, cancel);
                             loaded.Files.Add(file);
+                            // A file's decoding leaves its working memory behind: collected before the
+                            // next file, so that the heap reuses it rather than growing (FreeMemory).
+                            GC.Collect();
                         }
                         catch (OperationCanceledException)
                         {
@@ -428,6 +444,7 @@ namespace Strands.UI.Source
                 work = (cancel, progress) =>
                 {
                     StemSet set = StemsToSp16.Prepare(stems);
+                    GC.Collect();
                     var session = new SongSession(songName, set, StripsOf(stems)) { FilesVersion = version };
                     return new Analysed { Session = session, Choice = StemsToSp16.ChooseGrid(set, session.Options.Grid, progress, cancel) };
                 };
@@ -470,7 +487,12 @@ namespace Strands.UI.Source
             }
             List<Stem> stems = app.Strips.Stems();
             jobs.Run("Laying out stems",
-                (cancel, progress) => StemsToSp16.Prepare(stems),
+                (cancel, progress) =>
+                {
+                    StemSet laidOut = StemsToSp16.Prepare(stems);
+                    GC.Collect();
+                    return laidOut;
+                },
                 set =>
                 {
                     session.Reroute(set, StripsOf(stems));

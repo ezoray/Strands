@@ -117,8 +117,12 @@ namespace Strands.Export
     /// </summary>
     public static class StemsToSp16
     {
-        // An analysis holds a copy of its audio as it works, about 10 MB a minute.
+        // An analysis holds a copy of its audio as it works, about 10 MB a minute, and makes more
+        // as it goes. Unity's runtime keeps the managed heap at the largest it has ever been, so
+        // the analyses that run at once are held to so many minutes of audio between them (the
+        // user, 2026-10-18: 2.5 GB kept after loading and clearing many long stems).
         const int MaxAnalysesAtOnce = 6;
+        const double MostMinutesAnalysedAtOnce = 25;
 
         /// <summary>Outputs are handed out in the order the stems come, 1-2 to 7-8 and then round again.</summary>
         public static Sp16Output DefaultOutput(int stemIndex)
@@ -268,16 +272,54 @@ namespace Strands.Export
         {
             if (files.Count == 1)
                 return files[0];
-            int frames = 0;
-            foreach (WavData file in files)
-                frames = Math.Max(frames, file.Frames);
-            var audio = new short[files.Count][];
-            for (int i = 0; i < audio.Length; i++)
+            // Summed where they lie, a shorter file counting as silence past its end: filling each out
+            // to the longest first copied every file, 625 MB for 13 stems of different songs.
+            var parts = new short[files.Count][];
+            for (int i = 0; i < parts.Length; i++)
             {
                 WavToSp16.CheckSampleRate(files[i]);
-                audio[i] = ToLength(files[i].Samples, frames);
+                parts[i] = files[i].Samples;
             }
-            return new WavData { SampleRate = files[0].SampleRate, Samples = AddToFit(audio), SourceChannels = 2, SourceBitsPerSample = files[0].SourceBitsPerSample };
+            int length = 0;
+            foreach (short[] part in parts)
+                length = Math.Max(length, part.Length);
+            var peaks = new int[SumBlocks];
+            Parallel.For(0, SumBlocks, block =>
+            {
+                int from, to, peak = 0;
+                BlockOf(block, length, out from, out to);
+                for (int i = from; i < to; i++)
+                {
+                    int value = 0;
+                    for (int part = 0; part < parts.Length; part++)
+                        if (i < parts[part].Length)
+                            value += parts[part][i];
+                    if (value < 0)
+                        value = -value;
+                    if (value > peak)
+                        peak = value;
+                }
+                peaks[block] = peak;
+            });
+            int most = 0;
+            foreach (int peak in peaks)
+                most = Math.Max(most, peak);
+            double gain = most > short.MaxValue ? (double)short.MaxValue / most : 1.0;
+            var sum = new short[length];
+            Parallel.For(0, SumBlocks, block =>
+            {
+                int from, to;
+                BlockOf(block, length, out from, out to);
+                for (int i = from; i < to; i++)
+                {
+                    int value = 0;
+                    for (int part = 0; part < parts.Length; part++)
+                        if (i < parts[part].Length)
+                            value += parts[part][i];
+                    sum[i] = gain == 1.0 ? (short)value : (short)Math.Round(value * gain);
+                }
+            });
+            return new WavData { SampleRate = files[0].SampleRate, Samples = sum, SourceChannels = 2, SourceBitsPerSample = files[0].SourceBitsPerSample };
         }
 
         /// <summary>
@@ -311,7 +353,9 @@ namespace Strands.Export
             int rate = stems.Mix.SampleRate;
             int done = 0;
             var progressLock = new object();
-            var side = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Math.Min(MaxAnalysesAtOnce, Environment.ProcessorCount - 1)) };
+            double minutes = stems.Mix.Frames / (60.0 * rate);
+            int atOnce = Math.Max(1, Math.Min(MaxAnalysesAtOnce, (int)(MostMinutesAnalysedAtOnce / Math.Max(minutes, 0.01))));
+            var side = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Math.Min(atOnce, Environment.ProcessorCount - 1)) };
             Parallel.For(0, audio.Count, side, i =>
             {
                 GridCandidate candidate = choice.Candidates[i];
@@ -327,6 +371,9 @@ namespace Strands.Export
                 {
                     candidate.Error = e.Message;
                 }
+                // What the analysis worked with is garbage now: collected before the next one makes
+                // its own, so that the heap reuses it rather than growing.
+                GC.Collect();
                 // One at a time, so that the figure reported never goes backwards.
                 lock (progressLock)
                 {
