@@ -81,6 +81,7 @@ namespace Strands.UI.State
             app.ProjectNameChanged += ShowName;
             ShowName();
             Controls.KeepKeysOffButtons(root);
+            Controls.BlinkCursors(root);
             // The arrow keys step through patterns and scenes. Left to itself the panel would also
             // take each one as a move to the next control, which puts the keyboard in the tempo box
             // and every shortcut after it into the tempo. With nothing in focus the move is sent to

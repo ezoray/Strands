@@ -101,6 +101,15 @@
     border-color: var(--paper);
 }
 
+/* The text cursor: Unity's default is black, which does not show on the wells. It blinks by this class. */
+.unity-base-text-field__input {
+    --unity-cursor-color: var(--paper);
+}
+
+.cursor--off .unity-base-text-field__input {
+    --unity-cursor-color: rgba(0, 0, 0, 0);
+}
+
 .unity-progress-bar__background {
     border-width: 0;
     border-radius: 3px;

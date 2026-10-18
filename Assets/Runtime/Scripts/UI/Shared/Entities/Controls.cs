@@ -152,6 +152,41 @@ namespace Strands.UI.Shared
             root.Query<Button>().ForEach(button => button.focusable = false);
         }
 
+        /// <summary>
+        /// Makes the cursor of every text box under <paramref name="root"/> blink while the box has
+        /// focus, and stay lit while keys are pressed, as a text cursor does (the user, 2026-10-18:
+        /// with focus on the project name nothing showed it). Its colour is the stylesheet's
+        /// (<c>--unity-cursor-color</c>, paper; Unity's own is black, which does not show on the
+        /// app's wells), and it blinks by a class that makes it clear.
+        /// </summary>
+        public static void BlinkCursors(VisualElement root)
+        {
+            root.Query<TextField>().ForEach(BlinkCursor);
+        }
+
+        const long CursorBlinkMs = 530;
+        const string CursorOffClass = "cursor--off";
+
+        static void BlinkCursor(TextField field)
+        {
+            IVisualElementScheduledItem blink = null;
+            Action show = () =>
+            {
+                field.RemoveFromClassList(CursorOffClass);
+                if (blink != null)
+                    blink.Pause();
+                blink = field.schedule.Execute(() => field.ToggleInClassList(CursorOffClass)).Every(CursorBlinkMs).StartingIn(CursorBlinkMs);
+            };
+            field.RegisterCallback<FocusInEvent>(_ => show());
+            field.RegisterCallback<KeyDownEvent>(_ => show());
+            field.RegisterCallback<FocusOutEvent>(_ =>
+            {
+                if (blink != null)
+                    blink.Pause();
+                field.RemoveFromClassList(CursorOffClass);
+            });
+        }
+
         /// <summary>True while the user is typing in a text field, when a letter is a letter and not a shortcut.</summary>
         public static bool IsTyping(VisualElement root)
         {
