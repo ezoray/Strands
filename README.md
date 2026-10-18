@@ -38,7 +38,7 @@ Strands is a macOS and Windows application, with an untested Linux build, that t
 
 On macOS, a downloaded copy is stopped the first time it opens because it is not notarised. Allow it once in **System Settings > Privacy & Security > Open Anyway**.
 
-For everything else, the user guide included with the release covers the app in full detail.
+For everything else, the user guide covers the app in full detail. It comes with each release, and you can also [read it online](https://ezoray.github.io/Strands/docs/guide/Strands_User_Guide.html).
 
 ## Your Music
 
