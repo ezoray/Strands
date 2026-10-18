@@ -1178,6 +1178,38 @@ namespace Strands.Tests
         }
 
         [Test]
+        public void Plan_AFadeAtTheEndIsKeptAndOnlySilenceAfterTheSongIsDropped()
+        {
+            // 16 s at 128 BPM from 0.25 s, then 10 s more: a tone 34 dB under the song's peak, as a
+            // fade dying away, or hiss 60 dB under it, which is nothing. Patterns start at 0.25,
+            // 7.75, 15.25 and 22.75 s, so the last of them holds only what comes after the song.
+            var grid = new BeatGrid { Bpm = 128, FirstBeatSeconds = 0.25, DownbeatIndex = 0 };
+            Func<double, WavData> withEnd = belowPeak =>
+            {
+                WavData song = Synthesize(128, 0.25, 0, 16);
+                int peak = 0;
+                foreach (short v in song.Samples)
+                    peak = Math.Max(peak, Math.Abs((int)v));
+                int tail = 10 * Rate, frames = song.Frames + tail;
+                var samples = new short[frames * 2];
+                Array.Copy(song.Samples, samples, song.Samples.Length);
+                double level = peak * Math.Pow(10, -belowPeak / 20);
+                for (int f = song.Frames; f < frames; f++)
+                    samples[2 * f] = samples[2 * f + 1] = (short)Math.Round(level * Math.Sin(2 * Math.PI * 330 * f / Rate));
+                return new WavData { SampleRate = Rate, Samples = samples, SourceChannels = 2, SourceBitsPerSample = 16 };
+            };
+
+            WavData fade = withEnd(34);
+            WavExportResult kept = WavToSp16.Plan(fade, "x", new WavExportOptions(), grid);
+            Assert.That(kept.Chunks[kept.Chunks.Count - 1].EndFrame, Is.EqualTo(fade.Frames));
+
+            WavData hiss = withEnd(60);
+            WavExportResult dropped = WavToSp16.Plan(hiss, "x", new WavExportOptions(), grid);
+            Assert.That(dropped.Chunks[dropped.Chunks.Count - 1].EndFrame, Is.EqualTo((int)Math.Round(22.75 * Rate)).Within(2));
+            Assert.That(dropped.Chunks.Count, Is.LessThan(kept.Chunks.Count));
+        }
+
+        [Test]
         public void BlockLevels_FindTheLoudestSampleOfAnyStretchAndSayWhenItIsSilence()
         {
             // Ten seconds, quiet with one loud second in the middle, and a stretch of nothing.

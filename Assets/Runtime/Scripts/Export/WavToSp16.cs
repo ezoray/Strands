@@ -970,6 +970,9 @@ namespace Strands.Export
         /// Drops the patterns at the end of the song that hold nothing but silence, in every layer:
         /// a file often runs on after its last sound, and a pattern of that is a scene's pads and
         /// the unit's time spent on nothing. Silence inside the song stays: it is part of the music.
+        /// Silence here is what it is at the front of a file, 54 dB under the peak, and not what is
+        /// as good as silent: a fade or a reverb tail dying away is the song's end and is kept (the
+        /// user, 2026-10-18: the last 3.7 s of a song's fade, from 34 dB under its peak, were cut off).
         /// </summary>
         static void DropSilentEnd(WavExportResult plan, IList<BlockLevels> levels)
         {
@@ -978,7 +981,7 @@ namespace Strands.Export
             {
                 ChunkInfo chunk = plan.Chunks[i];
                 foreach (BlockLevels layer in levels)
-                    if (!layer.IsAsGoodAsSilent(chunk.StartFrame, chunk.EndFrame))
+                    if (!layer.IsSilent(chunk.StartFrame, chunk.EndFrame))
                         keep = i + 1;
             }
             // Audio with no sound in it at all is laid out as it is: there is no end to find.
