@@ -513,7 +513,7 @@ namespace Strands.UI.Align
                 return;
             }
             ChunkInfo chunk = plan.Chunks[selected];
-            string pattern = chunk.IsLeadIn ? "Lead-in" : "Pattern " + (chunk.Pattern + 1).ToString(Inv);
+            string pattern = chunk.IsLeadIn ? "Lead-in" : (chunk.IsLeadOut ? "Lead-out Pattern " : "Pattern ") + (chunk.Pattern + 1).ToString(Inv);
             selectedName.text = "Scene " + (chunk.Scene + 1).ToString(Inv) + " " + pattern;
 
             int steps = Sp16Project.StepsPerBar;

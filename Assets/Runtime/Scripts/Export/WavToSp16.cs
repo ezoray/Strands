@@ -177,6 +177,13 @@ namespace Strands.Export
         /// </summary>
         public int LeadingSilenceFrames;
         /// <summary>
+        /// Silent frames written after the audio. Only the lead-out has any: the last pattern, when
+        /// it is shorter than a whole pattern, is padded to the next beat line, so that its sample
+        /// is exactly as long as its pattern (the user, 2026-10-18: a looped last sample shorter than
+        /// its pattern was triggered twice by the arranger and then cut off).
+        /// </summary>
+        public int TrailingSilenceFrames;
+        /// <summary>
         /// Where the chunk's pattern starts, in frames of the source: for the lead-in, the beat
         /// line its silence takes it back to, which is before the start of the file when the
         /// file starts with sound. For every other chunk it is <see cref="StartFrame"/>.
@@ -184,6 +191,8 @@ namespace Strands.Export
         public int PatternStartFrame { get { return StartFrame - LeadingSilenceFrames; } }
         /// <summary>True for the sample that holds the audio in front of the first bar line.</summary>
         public bool IsLeadIn;
+        /// <summary>True for the last pattern when it is shorter than a whole pattern and padded to a beat (<see cref="TrailingSilenceFrames"/>).</summary>
+        public bool IsLeadOut;
         /// <summary>The bar this chunk starts on, counted from the first bar line in the audio; -1 for the lead-in.</summary>
         public int StartBar = -1;
         /// <summary>
@@ -704,13 +713,16 @@ namespace Strands.Export
                         chunk.Bars, grid.Bpm, Sp16Project.MaxSampleSeconds));
             }
 
-            if (options.SliceOnBeats)
-                foreach (ChunkInfo chunk in result.Chunks)
-                    LaySlices(chunk, grid, rate, options.ManualSliceFrames);
             if (layerSamples != null && result.Layers.Count > 0)
                 LeaveOutSilence(result, layerSamples);
             else if (result.Layers.Count == 0)
                 DropSilentEnd(result, new[] { blockLevels.GetValue(wav.Samples, samples => new BlockLevels(samples)) });
+            // After the silent end is dropped, so that it is the last pattern with sound that is padded;
+            // before the slices, so that the last of them is a whole beat.
+            PadLeadOut(result, barFrames, options.BarsPerChunk);
+            if (options.SliceOnBeats)
+                foreach (ChunkInfo chunk in result.Chunks)
+                    LaySlices(chunk, grid, rate, options.ManualSliceFrames);
 
             if (result.SampleBytes > Sp16Project.SampleMemoryBytes)
                 throw new PlanRefusedException(string.Format(CultureInfo.InvariantCulture,
@@ -732,6 +744,10 @@ namespace Strands.Export
             if (paddedMs >= 0.5)
                 result.Warnings.Add(string.Format(inv, "Padding {0:0} ms of silence to starting {1}.", paddedMs,
                     result.Chunks[0].PatternLength % (Sp16Project.StepsPerBar / BeatsPerBar) == 0 ? "beat" : "step"));
+            ChunkInfo lastChunk = result.Chunks[result.Chunks.Count - 1];
+            double trailingMs = lastChunk.IsLeadOut ? 1000.0 * lastChunk.TrailingSilenceFrames / rate : 0;
+            if (trailingMs >= 0.5)
+                result.Warnings.Add(string.Format(inv, "Padding {0:0} ms of silence to ending beat.", trailingMs));
             if (grid.BeatsMatched < 16 || grid.BeatsMatched < grid.BeatsInAudio / 4)
                 result.Warnings.Add("Few beats matched. Check tempo.");
             result.TempoWarning = TempoWarningFor(grid.Bpm);
@@ -916,6 +932,38 @@ namespace Strands.Export
                     if (silent[layer] && (sounding > 0 || layer > 0 || !KeepOneSampleInASilentPattern))
                         chunk.FileNames[layer] = null;
             }
+        }
+
+        /// <summary>
+        /// Pads the last pattern with silence to the next beat line when it is shorter than a whole
+        /// pattern, and makes the pattern exactly that long: the lead-out, as the lead-in is padded
+        /// back to a beat line at the front. Its sample and its pattern are then the same length, so
+        /// the arranger plays it once, a looped pad goes round on the beat, and its last slice is a
+        /// whole beat. A last pattern that is whole, or longer by the sliver of the song's end it
+        /// took in, is left as it is.
+        /// </summary>
+        static void PadLeadOut(WavExportResult plan, double barFrames, int barsPerChunk)
+        {
+            if (plan.Chunks.Count == 0)
+                return;
+            ChunkInfo last = plan.Chunks[plan.Chunks.Count - 1];
+            if (last.IsLeadIn)
+                return;
+            double beatFrames = barFrames / BeatsPerBar;
+            int frames = last.EndFrame - last.StartFrame;
+            // A frame or two past a beat line, where the two ends were rounded apart, is not another beat.
+            int beats = Math.Max(1, (int)Math.Ceiling(frames / beatFrames - 1e-3));
+            int steps = beats * (Sp16Project.StepsPerBar / BeatsPerBar);
+            // Measured against a whole pattern and not against the pattern it has, which is rounded up
+            // to whole bars: a tail of 7.7 beats has a 2-bar pattern already and is still 0.3 of a
+            // beat short of it.
+            if (steps >= barsPerChunk * Sp16Project.StepsPerBar)
+                return;
+            last.TrailingSilenceFrames = Math.Max(0, (int)Math.Round(beats * beatFrames) - frames);
+            last.SampleFrames = frames + last.TrailingSilenceFrames;
+            last.PatternLength = steps;
+            last.Bars = (steps + Sp16Project.StepsPerBar - 1) / Sp16Project.StepsPerBar;
+            last.IsLeadOut = true;
         }
 
         /// <summary>
@@ -1272,7 +1320,7 @@ namespace Strands.Export
                 {
                     ChunkInfo chunk = plan.Chunks[i];
                     // How long the sample is in bars, to the step, without the tail it plays on into the next.
-                    double bars = Math.Round((chunk.EndFrame - chunk.StartFrame + chunk.LeadingSilenceFrames) / framesToABar * Sp16Project.StepsPerBar) / Sp16Project.StepsPerBar;
+                    double bars = Math.Round((chunk.EndFrame - chunk.StartFrame + chunk.LeadingSilenceFrames + chunk.TrailingSilenceFrames) / framesToABar * Sp16Project.StepsPerBar) / Sp16Project.StepsPerBar;
                     for (int layer = 0; layer < chunk.FileNames.Length; layer++)
                     {
                         cancel.ThrowIfCancellationRequested();
@@ -1294,7 +1342,7 @@ namespace Strands.Export
         static int OverlapAfter(WavExportResult plan, int index)
         {
             ChunkInfo chunk = plan.Chunks[index];
-            return chunk.StartFrame + chunk.SampleFrames - chunk.LeadingSilenceFrames - chunk.EndFrame;
+            return chunk.StartFrame + chunk.SampleFrames - chunk.LeadingSilenceFrames - chunk.TrailingSilenceFrames - chunk.EndFrame;
         }
 
         /// <summary>
@@ -1312,7 +1360,7 @@ namespace Strands.Export
             int fadeOut = chunkIndex + 1 < plan.Chunks.Count ? OverlapAfter(plan, chunkIndex) : 0;
             bool mono = plan.Layers.Count > 0 && plan.Layers[layer].IsMono;
             int channels = mono ? 1 : 2;
-            int frames = chunk.SampleFrames - chunk.LeadingSilenceFrames;
+            int frames = chunk.SampleFrames - chunk.LeadingSilenceFrames - chunk.TrailingSilenceFrames;
             // A sample that loops is brought down to nothing at its two ends, where it goes round.
             bool loops = plan.LoopOf(chunk.Index, layer);
             int padFadeIn = loops ? Math.Min(frames / 4, Math.Max(fadeIn, plan.LoopFadeInFrames)) : fadeIn;
@@ -1320,7 +1368,7 @@ namespace Strands.Export
             short[] samples = mono
                 ? CutChunkMono(layerSamples[layer], chunk.StartFrame, frames, padFadeIn, padFadeOut)
                 : CutChunk(layerSamples[layer], chunk.StartFrame, frames, padFadeIn, padFadeOut);
-            if (chunk.LeadingSilenceFrames > 0)
+            if (chunk.LeadingSilenceFrames > 0 || chunk.TrailingSilenceFrames > 0)
             {
                 var padded = new short[chunk.SampleFrames * channels];
                 Array.Copy(samples, 0, padded, chunk.LeadingSilenceFrames * channels, samples.Length);

@@ -585,6 +585,8 @@ namespace Strands.UI.Align
                 string number = (chunk.Pattern + 1).ToString(Inv);
                 string[] names = chunk.IsLeadIn
                     ? new[] { string.IsNullOrEmpty(leadInNote) ? null : "Lead-in Pattern " + number + "  ·  " + leadInNote, "Lead-in Pattern " + number, "Lead-in", "P" + number }
+                    : chunk.IsLeadOut
+                    ? new[] { "Lead-out Pattern " + number + "  ·  " + Bars(FirstBar(chunk), LastBar(chunk)), "Lead-out Pattern " + number, "Lead-out", "P" + number }
                     : new[] { "Pattern " + number + "  ·  " + Bars(FirstBar(chunk), LastBar(chunk)), "Pattern " + number, "P" + number };
                 foreach (string name in names)
                 {

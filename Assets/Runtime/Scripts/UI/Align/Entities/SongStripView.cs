@@ -224,8 +224,9 @@ namespace Strands.UI.Align
                 float blockLeft = Mathf.Round(x0), span = Mathf.Round(x1) - blockLeft;
                 bool isSelected = i == selected;
                 FillRect(painter, blockLeft + 1, NamesHeight, Mathf.Max(1, span - 1), BlocksHeight, isSelected ? Theme.Paper : even ? Theme.BlockA : Theme.BlockB);
-                // The lead-in is pattern 1: named in full where there is room, otherwise numbered as the others are.
-                string label = chunk.IsLeadIn && span > 46 ? "lead-in" : (chunk.Pattern + 1).ToString(Inv);
+                // The lead-in and the lead-out are patterns too: named in full where there is room,
+                // otherwise numbered as the others are.
+                string label = chunk.IsLeadIn && span > 46 ? "lead-in" : chunk.IsLeadOut && span > 52 ? "lead-out" : (chunk.Pattern + 1).ToString(Inv);
                 if (label.Length > 0 && span > label.Length * Character + 4)
                     context.DrawText(label, new Vector2(x0 + (span - label.Length * Character) / 2, NamesHeight + 1), Faces.Size(this, Text), isSelected ? Theme.Ink : inSelectedScene ? Theme.Text : Theme.QuietText, faces.Mono);
 

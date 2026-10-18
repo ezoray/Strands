@@ -490,8 +490,10 @@ namespace Strands.Tests
                 Assert.That(project.Pad(chunk.Scene, chunk.PadOf(1)).Child("PlaybackData").Scalar("lengthSample").AsInt32(), Is.EqualTo(chunk.SampleFrames));
                 Assert.That(project.GetSliceBoundaries(chunk.Scene, chunk.PadOf(1)), Is.EqualTo(project.GetSliceBoundaries(chunk.Scene, chunk.Pad)));
 
-                for (int frame = chunk.LeadingSilenceFrames; frame < chunk.SampleFrames; frame++)
+                for (int frame = chunk.LeadingSilenceFrames; frame < chunk.SampleFrames - chunk.TrailingSilenceFrames; frame++)
                     rebuilt[chunk.StartFrame + frame - chunk.LeadingSilenceFrames] += sample.Samples[2 * frame];
+                for (int frame = chunk.SampleFrames - chunk.TrailingSilenceFrames; frame < chunk.SampleFrames; frame++)
+                    Assert.That(sample.Samples[2 * frame], Is.EqualTo(0));
                 if (chunk.IsLeadIn)
                     for (int frame = 0; frame < chunk.LeadingSilenceFrames; frame += 29)
                         Assert.That(sample.Samples[2 * frame], Is.EqualTo(0));
@@ -911,8 +913,11 @@ namespace Strands.Tests
                     if (layer == 1)
                     {
                         WavData sample = WavReader.Read(entries[entry].Data);
-                        for (int s = 0; s < sample.Samples.Length; s++)
+                        int sound = sample.Samples.Length - 2 * plan.Chunks[i].TrailingSilenceFrames;
+                        for (int s = 0; s < sound; s++)
                             rebuilt[2 * plan.Chunks[i].StartFrame + s] += sample.Samples[s];
+                        for (int s = sound; s < sample.Samples.Length; s++)
+                            Assert.That(sample.Samples[s], Is.EqualTo(0));
                     }
                     entry += 2;
                 }
@@ -1068,8 +1073,12 @@ namespace Strands.Tests
                     Assert.That(SampleAdjunct.Read(datEntry.Data).SampleNum, Is.EqualTo(chunk.SampleFrames));
                     WavData sample = WavReader.Read(wavEntry.Data);
                     Assert.That(sample.Frames, Is.EqualTo(chunk.SampleFrames));
-                    for (int k = 0; k < sample.Samples.Length; k++)
+                    // The lead-out's silence after its sound is not in the stem.
+                    int sound = sample.Samples.Length - 2 * chunk.TrailingSilenceFrames;
+                    for (int k = 0; k < sound; k++)
                         rebuilt[chunk.StartFrame * 2 + k] += sample.Samples[k];
+                    for (int k = sound; k < sample.Samples.Length; k++)
+                        Assert.That(sample.Samples[k], Is.EqualTo(0));
                 }
                 // Laid back over each other, with their crossfades, the chunks are the stem again, left and right.
                 for (int k = plan.Chunks[0].StartFrame * 2; k < stem.Length; k++)

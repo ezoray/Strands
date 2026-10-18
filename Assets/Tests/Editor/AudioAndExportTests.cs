@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -181,9 +182,13 @@ namespace Strands.Tests
             }
             Assert.That(result.ProjectName, Is.EqualTo("Test_Song"));
 
-            // 40 s at 128 BPM from 0.25 s is 21.2 bars: five full 4-bar chunks and a 2-bar remainder.
+            // 40 s at 128 BPM from 0.25 s is 21.2 bars: five full 4-bar chunks and what is left, 4.8
+            // beats, a lead-out padded to 5 beats, 20 steps.
             Assert.That(result.Chunks.Count, Is.EqualTo(6));
             Assert.That(result.Chunks[5].Bars, Is.EqualTo(2));
+            Assert.That(result.Chunks[5].IsLeadOut, Is.True);
+            Assert.That(result.Chunks[5].PatternLength, Is.EqualTo(20));
+            Assert.That(result.Chunks[4].IsLeadOut, Is.False);
 
             List<StoredZipReader.Entry> entries = StoredZipReader.Read(package);
             Assert.That(entries.Count, Is.EqualTo(1 + 2 * result.Chunks.Count));
@@ -206,7 +211,7 @@ namespace Strands.Tests
                 Assert.That(section.Bpm, Is.EqualTo((float)result.Grid.Bpm));
 
                 PrjNode pattern = project.FindPattern(chunk.Scene, chunk.Pattern);
-                Assert.That(pattern.Scalar("Length").AsInt32(), Is.EqualTo(chunk.Bars * 16));
+                Assert.That(pattern.Scalar("Length").AsInt32(), Is.EqualTo(chunk.PatternLength));
                 List<KeyValuePair<int, int>> triggers = StepsBlob.FromScalar(pattern.Scalar("Steps")).GetTriggers();
                 Assert.That(triggers.Count, Is.EqualTo(1));
                 Assert.That(triggers[0].Key, Is.EqualTo(chunk.Pad));
@@ -233,8 +238,11 @@ namespace Strands.Tests
                 if (i > 0)
                     Assert.That(chunk.StartFrame, Is.EqualTo(result.Chunks[i - 1].EndFrame));
                 short[] samples = WavReader.Read(entries[1 + 2 * i].Data).Samples;
-                for (int frame = 0; frame < chunk.SampleFrames; frame++)
+                for (int frame = 0; frame < chunk.SampleFrames - chunk.TrailingSilenceFrames; frame++)
                     rebuilt[chunk.StartFrame + frame] += samples[frame * 2];
+                // The lead-out's silence after the song's end.
+                for (int frame = chunk.SampleFrames - chunk.TrailingSilenceFrames; frame < chunk.SampleFrames; frame++)
+                    Assert.That(samples[frame * 2], Is.EqualTo(0));
             }
             Assert.That(result.Chunks[result.Chunks.Count - 1].EndFrame, Is.EqualTo(wav.Frames));
             for (int frame = result.Chunks[0].StartFrame; frame < wav.Frames; frame++)
@@ -917,7 +925,7 @@ namespace Strands.Tests
                 options.StartBeat = beat;
                 WavExportResult plan = WavToSp16.Plan(wav, "x", options, awkward);
                 Assert.That(plan.Chunks[0].StartFrame, Is.EqualTo((int)Math.Round(awkward.TimeOfBeat(beat) * Rate)), "beat " + beat);
-                Assert.That(plan.Warnings, Has.None.Contains("Padding"), "beat " + beat);
+                Assert.That(plan.Warnings, Has.None.Contains("to starting"), "beat " + beat);
                 if (beat % 16 == 0)
                 {
                     Assert.That(plan.Chunks[0].IsLeadIn, Is.False, "beat " + beat);
@@ -1026,7 +1034,7 @@ namespace Strands.Tests
             Assert.That(plan.Chunks[0].PatternLength, Is.EqualTo(4));
             Assert.That(plan.Chunks[0].LeadingSilenceFrames, Is.EqualTo(0));
             Assert.That(plan.Warnings[0], Is.EqualTo("Dropping first 0.70 seconds of silence."));
-            Assert.That(plan.Warnings, Has.None.Contains("Padding"));
+            Assert.That(plan.Warnings, Has.None.Contains("to starting"));
             // The beat after the one it starts on is the bar line.
             Assert.That(WavToSp16.FirstLaterStartBeat(faint, options, grid), Is.EqualTo(0));
 
@@ -1093,7 +1101,7 @@ namespace Strands.Tests
         public void S8_SampleFilesCarryTheSongsTempoAndTheirLengthInBars()
         {
             // 20 s at 128 BPM with the first bar line at 0.25 s: a lead-in of a beat, two patterns
-            // of four bars and what is left, 4.75 s, which is two and a half bars to the step.
+            // of four bars and what is left, 4.75 s, a lead-out padded to the next beat: 11 beats.
             WavData wav = Synthesize(128, 0.25, 0, 20);
             var grid = new BeatGrid { Bpm = 128, FirstBeatSeconds = 0.25, DownbeatIndex = 0 };
             WavExportResult plan = WavToSp16.Plan(wav, "Tempo", new WavExportOptions { KeepLeadIn = true }, grid);
@@ -1117,7 +1125,7 @@ namespace Strands.Tests
                 Assert.That(adjunct.Bpm, Is.EqualTo(plan.Grid.Bpm));
                 Assert.That(adjunct.SampleNum, Is.EqualTo(plan.Chunks[i].SampleFrames));
                 // The length the sample has in the song, to the step, without the tail it fades out over.
-                double seconds = (double)(plan.Chunks[i].EndFrame - plan.Chunks[i].StartFrame + plan.Chunks[i].LeadingSilenceFrames) / Rate;
+                double seconds = (double)(plan.Chunks[i].EndFrame - plan.Chunks[i].StartFrame + plan.Chunks[i].LeadingSilenceFrames + plan.Chunks[i].TrailingSilenceFrames) / Rate;
                 Assert.That(adjunct.Bar, Is.EqualTo(seconds * plan.Grid.Bpm / 240).Within(1.0 / 32));
                 Assert.That(adjunct.Bar * 16, Is.EqualTo(Math.Round(adjunct.Bar * 16)).Within(1e-9));
                 bars.Add(adjunct.Bar);
@@ -1126,9 +1134,47 @@ namespace Strands.Tests
             Assert.That(bars[0], Is.EqualTo(0.25));
             Assert.That(bars[1], Is.EqualTo(4));
             Assert.That(bars[2], Is.EqualTo(4));
+            Assert.That(bars[3], Is.EqualTo(2.75));
+            Assert.That(plan.Chunks[3].IsLeadOut, Is.True);
             // The loader's values still come out of the plain form, which the probes use.
             Assert.That(SampleAdjunct.ForSample(100).Bar, Is.EqualTo(2.0));
             Assert.That(SampleAdjunct.ForSample(100).Bpm, Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void Plan_TheLeadOutIsPaddedToTheNextBeatAndItsPatternIsThatLong()
+        {
+            // 20 s at 128 BPM from 0.25 s: two patterns of four bars, then 4.75 s, which is 10.13 beats.
+            var grid = new BeatGrid { Bpm = 128, FirstBeatSeconds = 0.25, DownbeatIndex = 0 };
+            double beatFrames = 60.0 / 128 * Rate;
+            WavExportResult plan = WavToSp16.Plan(Synthesize(128, 0.25, 0, 20), "x", new WavExportOptions { SliceOnBeats = true }, grid);
+            ChunkInfo last = plan.Chunks[plan.Chunks.Count - 1];
+            Assert.That(last.IsLeadOut, Is.True);
+            Assert.That(plan.Chunks[plan.Chunks.Count - 2].IsLeadOut, Is.False);
+            Assert.That(last.PatternLength, Is.EqualTo(11 * 4));
+            Assert.That(last.SampleFrames, Is.EqualTo((int)Math.Round(11 * beatFrames)));
+            Assert.That(last.TrailingSilenceFrames, Is.EqualTo(last.SampleFrames - (last.EndFrame - last.StartFrame)));
+            Assert.That(last.Slices, Is.EqualTo(11));
+            int[] slices = last.SliceBoundariesInSample();
+            Assert.That(slices[slices.Length - 1] - slices[slices.Length - 2], Is.EqualTo(beatFrames).Within(1));
+            double ms = 1000.0 * last.TrailingSilenceFrames / Rate;
+            Assert.That(plan.Warnings, Has.Some.EqualTo(string.Format(CultureInfo.InvariantCulture, "Padding {0:0} ms of silence to ending beat.", ms)));
+
+            // A tail just short of whole bars is padded too: its pattern was already rounded up to them.
+            WavExportResult nearly = WavToSp16.Plan(Synthesize(128, 0.25, 0, 0.25 + (2 * 4 * 4 + 7.7) * 60.0 / 128), "x", new WavExportOptions(), grid);
+            ChunkInfo short2 = nearly.Chunks[nearly.Chunks.Count - 1];
+            Assert.That(short2.IsLeadOut, Is.True);
+            Assert.That(short2.PatternLength, Is.EqualTo(32));
+            Assert.That(short2.SampleFrames, Is.EqualTo((int)Math.Round(8 * beatFrames)));
+            Assert.That(short2.TrailingSilenceFrames, Is.GreaterThan(0));
+
+            // A song that ends where a pattern ends has no lead-out, and nothing is said.
+            WavExportResult whole = WavToSp16.Plan(Synthesize(128, 0.25, 0, 0.25 + 8 * 4 * 60.0 / 128), "x", new WavExportOptions(), grid);
+            ChunkInfo end = whole.Chunks[whole.Chunks.Count - 1];
+            Assert.That(end.IsLeadOut, Is.False);
+            Assert.That(end.TrailingSilenceFrames, Is.EqualTo(0));
+            Assert.That(end.PatternLength, Is.EqualTo(64));
+            Assert.That(whole.Warnings, Has.None.Contains("ending beat"));
         }
 
         [Test]

@@ -445,6 +445,7 @@
     <tr><td>Bar</td><td>Four beats. Count “1, 2, 3, 4”: the 1 is the start of the bar.</td></tr>
     <tr><td>Pattern</td><td>A piece of the song up to 4 bars long. Each pattern plays its pads once, from its first step.</td></tr>
     <tr><td>Lead-in</td><td>Any part of the song before the first full pattern, such as a pickup or a count-in. It gets a shorter pattern of its own so nothing is lost.</td></tr>
+    <tr><td>Lead-out</td><td>The last pattern, when the song ends before a full pattern does. It's padded with silence to the next beat, so it plays once and ends on the beat.</td></tr>
     <tr><td>Scene</td><td>A page of 16 pads on the unit. With four stems a scene holds 4 patterns; with a full song it holds 16.</td></tr>
     <tr><td>Pad, or track</td><td>One of the 16 pads in a scene. Each holds one sample. The unit calls them tracks and numbers them 1 to 16.</td></tr>
     <tr><td>Output</td><td>A socket on the back of the unit. Outputs 1 to 8 work in pairs (1-2, 3-4, 5-6, 7-8) for stereo, or one at a time for mono. Master is the main output.</td></tr>
@@ -872,6 +873,8 @@
 
 <p>Songs rarely start exactly on a bar line. Whatever comes before the first full pattern becomes the <strong>lead-in</strong>: a shorter pattern of its own, so the opening isn't lost. Strands pads it with silence at the front so that it starts on a beat, and the notes under the waveform say how much. Silence at the very start of the file is left out.</p>
 
+<p>The end works the same way. If the song ends part way through its last pattern, that pattern becomes the <strong>lead-out</strong>: Strands pads it with silence to the next beat and makes its pattern exactly that long, so the arranger plays it once and stops on the beat.</p>
+
 <div class="diagram">
   <svg viewBox="0 0 900 150" role="img" aria-label="The lead-in: silence added in front up to a beat, then the opening of the song, then Pattern 2 starting on bar 1.">
     <g stroke="#3a447a" stroke-width="2"><line x1="100" y1="20" x2="100" y2="100"/><line x1="200" y1="20" x2="200" y2="100"/><line x1="300" y1="20" x2="300" y2="100"/><line x1="500" y1="20" x2="500" y2="100"/><line x1="600" y1="20" x2="600" y2="100"/><line x1="700" y1="20" x2="700" y2="100"/><line x1="800" y1="20" x2="800" y2="100"/></g>
@@ -908,11 +911,11 @@
 
 <p>To fix it, select the pattern just before the point where things go out, then shorten it under <strong>Pattern length</strong> with <span class="ui">←</span> (or <kbd>[</kbd>). It can be 1 to 4 bars. Everything after it moves along to match, and nothing before it changes. <span class="ui">→</span> (or <kbd>]</kbd>) makes it longer again.</p>
 
-<p>The lead-in's length is set by where the song starts, and the last pattern simply runs to the end of the song, so neither can be changed here.</p>
+<p>The lead-in's length is set by where the song starts, and the last pattern runs to the end of the song, so neither can be changed here.</p>
 
 <h3>The notes under the waveform</h3>
 
-<p>The line between the song strip and the panels tells you about anything Strands has done or found. In yellow, it's for information: silence it has left out at the start, silence it has added in front of the lead-in, or stems that are too loud when added together. In <span style="color: var(--bad)">red</span>, it's the reason the song can't be exported yet, such as too many patterns or too much audio for the unit.</p>
+<p>The line between the song strip and the panels tells you about anything Strands has done or found. In yellow, it's for information: silence it has left out at the start, silence it has added in front of the lead-in or after the lead-out, or stems that are too loud when added together. In <span style="color: var(--bad)">red</span>, it's the reason the song can't be exported yet, such as too many patterns or too much audio for the unit.</p>
 
 <p>When you're happy, press <span class="ui">Export</span>.</p>
 

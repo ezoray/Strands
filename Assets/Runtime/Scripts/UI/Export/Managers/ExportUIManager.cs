@@ -274,7 +274,7 @@ namespace Strands.UI.Export
 
         static string PatternName(ChunkInfo chunk)
         {
-            return chunk.IsLeadIn ? "Lead-in" : "Pattern " + (chunk.Pattern + 1).ToString(Inv);
+            return chunk.IsLeadIn ? "Lead-in" : chunk.IsLeadOut ? "Lead-out" : "Pattern " + (chunk.Pattern + 1).ToString(Inv);
         }
 
         /// <summary>
@@ -357,7 +357,7 @@ namespace Strands.UI.Export
             var pattern = new Label(PatternName(chunk));
             pattern.AddToClassList("pad__pattern");
             face.Add(pattern);
-            var wave = new PadWave(PictureOf(plan, layer), chunk.StartFrame, chunk.EndFrame - chunk.StartFrame, chunk.LeadingSilenceFrames);
+            var wave = new PadWave(PictureOf(plan, layer), chunk.StartFrame, chunk.EndFrame - chunk.StartFrame, chunk.LeadingSilenceFrames, chunk.TrailingSilenceFrames);
             face.Add(wave);
 
             var keys = new VisualElement();
@@ -433,7 +433,7 @@ namespace Strands.UI.Export
                 {
                     // Through the whole sample, the silence a lead-in starts with included, as the pad draws it.
                     ChunkInfo chunk = plan.Chunks[view.Chunk];
-                    view.Wave.Progress = (float)(at / Math.Max(1, chunk.EndFrame - chunk.StartFrame + chunk.LeadingSilenceFrames));
+                    view.Wave.Progress = (float)(at / Math.Max(1, chunk.EndFrame - chunk.StartFrame + chunk.LeadingSilenceFrames + chunk.TrailingSilenceFrames));
                 }
                 if (lit == view.Lit)
                     continue;
