@@ -11,6 +11,8 @@ namespace Strands.Applications.Core
         [SerializeField] int frameRate = 60;
 
         bool nameIsTheUsers;
+        // The name the files give, kept so that an empty name box can go back to it.
+        string suggestedName;
         double refreshRate;
         float nextLookAtTheDisplay;
 
@@ -127,21 +129,27 @@ namespace Strands.Applications.Core
         /// <summary>A name taken from the files. It is used until the user types one of their own.</summary>
         public void SuggestProjectName(string name)
         {
+            suggestedName = name;
             if (!nameIsTheUsers)
                 Use(name);
         }
 
-        /// <summary>The name the user typed, which is kept whatever files are added after it.</summary>
+        /// <summary>
+        /// The name the user typed, which is kept whatever files are added after it. A name left
+        /// empty gives way to the one from the files again (the user, 2026-10-18: "if the user
+        /// deletes the project name and leaves it empty can we put it back in").
+        /// </summary>
         public void SetProjectName(string name)
         {
-            nameIsTheUsers = true;
-            Use(name);
+            nameIsTheUsers = !string.IsNullOrWhiteSpace(name);
+            Use(nameIsTheUsers ? name : suggestedName);
         }
 
         /// <summary>Back to no name, for when every file is taken away.</summary>
         public void ForgetProjectName()
         {
             nameIsTheUsers = false;
+            suggestedName = null;
             Use(null);
         }
 
