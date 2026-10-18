@@ -752,6 +752,10 @@ namespace Strands.UI.Export
             if (plan == null)
                 return;
             byte[] template = app.ProjectTemplate;
+            var sources = new List<string>();
+            foreach (StripFile file in app.Strips.Files)
+                if (!sources.Contains(file.Path))
+                    sources.Add(file.Path);
             jobs.Run("Writing " + Path.GetFileName(path),
                 (cancel, progress) =>
                 {
@@ -761,6 +765,7 @@ namespace Strands.UI.Export
                 written =>
                 {
                     jobs.SetIdleMessage("Wrote " + Path.GetFileName(written.PackagePath));
+                    Debug.Log("Wrote " + written.PackagePath + " from " + string.Join(", ", sources.ToArray()));
                     if (session != song)
                         return;
                     writtenPath = written.PackagePath;

@@ -397,6 +397,13 @@ namespace Strands.UI.Source
                     ShowError(loaded.Failed.Count == 0 ? null : string.Join("\n", loaded.Failed.ToArray()));
                     foreach (string failed in loaded.Failed)
                         Debug.LogWarning(failed);
+                    // Every file by its whole path, so that the log can say what a package was made from
+                    // (the user, 2026-10-18, after a package came out of a click track that was not meant to be loaded).
+                    foreach (StripFile file in loaded.Files)
+                        Debug.Log("Loaded " + file.Path);
+                    foreach (List<StripFile> stems in loaded.StemFiles)
+                        if (stems.Count > 0)
+                            Debug.Log("Loaded " + stems[0].Path + " (" + stems.Count + " stems)");
                     Rebuild();
                 },
                 e =>
