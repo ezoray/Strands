@@ -36,6 +36,8 @@ Strands is a macOS and Windows application, with an untested Linux build, that t
 4. Go to **Export**, set the options, and press **Export package**
 5. Copy the `.tpkg` to the SP-16 or DJS-1000 and load it
 
+Strands needs macOS 12 Monterey or later, or 64-bit Windows 10 (version 21H1 or later) or Windows 11.
+
 On macOS, a downloaded copy is stopped the first time it opens because it is not notarised. Allow it once in **System Settings > Privacy & Security > Open Anyway**.
 
 For everything else, the user guide covers the app in full detail. It comes with each release, and you can also [read it online](https://ezoray.github.io/Strands/docs/guide/Strands_User_Guide.html).

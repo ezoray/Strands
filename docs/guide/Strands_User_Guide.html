@@ -439,7 +439,7 @@
 <table>
   <thead><tr><th>Word</th><th>What it means</th></tr></thead>
   <tbody>
-    <tr><td>Stem</td><td>One part of a song on its own, such as the drums or the vocals. Stems are made by stem separation software (Traktor, Serato, Rekordbox, online services and others) and come as separate audio files, or together in one <code>.stem.mp4</code> file. Strands doesn't make stems itself; it uses the ones you give it.</td></tr>
+    <tr><td>Stem</td><td>One part of a song on its own, such as the drums or the vocals. Stems are made by stem separation software, such as Traktor, other separation apps and online services, and come as separate audio files, or together in one <code>.stem.mp4</code> file. Stems that a DJ app only separates live, without saving them as files, can't be used. Strands doesn't make stems itself; it uses the ones you give it.</td></tr>
     <tr><td>Full song</td><td>The song as one file, with everything mixed together.</td></tr>
     <tr><td>Beat grid</td><td>The lines Strands draws on the song where each beat falls. Brighter lines are the start of each bar.</td></tr>
     <tr><td>Bar</td><td>Four beats. Count “1, 2, 3, 4”: the 1 is the start of the bar.</td></tr>
@@ -563,7 +563,7 @@
 <div class="cols">
   <div>
     <h4>macOS</h4>
-    <p>Strands runs on Apple silicon and Intel Macs. The first time you open a downloaded copy, macOS stops it because the app isn't notarised by Apple. To allow it, once:</p>
+    <p>Strands runs on Apple silicon and Intel Macs with macOS 12 Monterey or later. The first time you open a downloaded copy, macOS stops it because the app isn't notarised by Apple. To allow it, once:</p>
     <ol>
       <li>Double-click <strong>Strands</strong>, then click <span class="ui">Done</span> on the message that appears.</li>
       <li>Open <strong>System Settings</strong> and go to <strong>Privacy &amp; Security</strong>.</li>
@@ -574,7 +574,7 @@
   </div>
   <div>
     <h4>Windows</h4>
-    <p>Run <strong>Strands.exe</strong> from the unzipped folder, keeping the files and folders beside it where they are.</p>
+    <p>Strands needs 64-bit Windows 10 (version 21H1 or later) or Windows 11. Run <strong>Strands.exe</strong> from the unzipped folder, keeping the files and folders beside it where they are.</p>
     <p>If Windows shows <em>Windows protected your PC</em>, click <span class="ui">More info</span> and then <span class="ui">Run anyway</span>. This only happens the first time.</p>
   </div>
 </div>
@@ -1040,7 +1040,7 @@
 
 <h2 id="limits" style="--c: var(--paper)">Memory and length</h2>
 
-<p>The SP-16 and DJS-1000 have <strong>256 MB</strong> of memory for samples. The memory meter at the top of every screen shows how much of it your project will use, in the stem colours. It turns red when the project won't fit. On the Source screen it's an estimate until you press <span class="ui">Analyse</span>; after that it shows the package's own figure, which is often a little less because silent samples are left out, until you change the strips.</p>
+<p>The SP-16 and DJS-1000 have <strong>256 MB</strong> of memory for samples. The memory meter at the top of every screen shows how much of it your project will use, in the stem colours. It turns yellow when the project is nearly full (over 85%), and red when it won't fit. On the Source screen it's an estimate until you press <span class="ui">Analyse</span>; after that it shows the package's own figure, which is often a little less because silent samples are left out, until you change the strips.</p>
 
 <ul>
   <li>Four stereo stems use about <strong>40 MB a minute</strong>, so they fit up to about <strong>6 minutes</strong>. A full song as one file uses a quarter of that.</li>
@@ -1056,13 +1056,13 @@
 <h2 id="help" style="--c: var(--paper)">Problems and questions</h2>
 
 <h4>Analyse is dimmed</h4>
-<p>The foot of the Source screen says why in red. Either there are more than 16 tracks, or the last analysis found the project needs more memory or more patterns than the unit has. Set a strip to <span class="ui">Summed tracks</span> or remove some files, and <span class="ui">Analyse</span> comes back on. Mono also helps when the problem is memory, but not when the song has too many tracks for its length. The beat grid is kept, so it goes straight to the Analysis screen.</p>
+<p>The foot of the Source screen says why in red. Either there are more than 16 tracks, the audio is silent (<strong>Audio is silent. Nothing to export.</strong>), or the last analysis found the project needs more memory or more patterns than the unit has. Set a strip to <span class="ui">Summed tracks</span> or remove some files, and <span class="ui">Analyse</span> comes back on. Mono also helps when the problem is memory, but not when the song has too many tracks for its length. The beat grid is kept, so it goes straight to the Analysis screen.</p>
 
 <h4>The notes under the waveform are red</h4>
 <p>The song can't be exported as it is, and the note says why: usually a change of tempo has made it too large to fit, in memory or in patterns. See <a href="#limits">Memory and length</a>.</p>
 
 <h4>A file won't load</h4>
-<p>Strands can't read copy-protected files, such as some music bought from streaming services. Stem files whose stems are in Apple Lossless can only be read on a Mac. Any other file that won't load may be damaged; try opening it in another app.</p>
+<p>Strands can't read copy-protected files, such as tracks downloaded for offline listening from a streaming service. Apple Lossless files, stem files included, and some low bit rate <code>.m4a</code> files (HE-AAC) can only be read on a Mac. Any other file that won't load may be damaged; try opening it in another app.</p>
 
 <h4>The beat is right at the start but wrong later on</h4>
 <p>Strands uses one steady tempo for the whole song. Try <span class="ui">Refit</span>, or <span class="ui">Tap</span> and then <span class="ui">Refit</span>. A song whose tempo changes, or one played by a live drummer without a click, won't line up all the way through.</p>
@@ -1082,7 +1082,7 @@
 
 <h2 id="keys" style="--c: var(--paper)">Keyboard and mouse</h2>
 
-<p>Shortcuts don't work while you're typing in a box, such as the project name or the tempo; press Return or click elsewhere first. On Windows, use <kbd>Ctrl</kbd> where this says <kbd>Cmd</kbd>.</p>
+<p>Shortcuts don't work while you're typing in a box, such as the project name or the tempo; press Return or click elsewhere first. On Windows and Linux, use <kbd>Ctrl</kbd> where this says <kbd>Cmd</kbd>.</p>
 
 <h3>Analysis screen</h3>
 
