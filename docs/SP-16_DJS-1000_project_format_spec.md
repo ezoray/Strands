@@ -156,7 +156,7 @@ An entry is its id in byte 0 and a **22-bit signed value** in bytes 1 to 3 (−5
 | 5, 6, 7 | ATTACK, HOLD, RELEASE | knob |
 | 8 | LFO SPEED | knob |
 | 10 | OFFSET | 1/48 of a step, ±48 |
-| 11 | RETRIGGER CNT | triggers in all |
+| 11 | RETRIGGER CNT | triggers in all, up to 64 (Reported, DJS-1000) |
 | 12 | RETRIGGER SPD | place in the list 1/64, 1/32T, 1/32, 1/16T, 1/16, 1/8T, 1/8, 1/4T, 1/4 |
 | 13 | step volume | 0 to 127 |
 
@@ -165,7 +165,7 @@ An entry is its id in byte 0 and a **22-bit signed value** in bytes 1 to 3 (−5
 - **Choosing a slice** for a step writes START, LOOP START and LENGTH as the slice's boundaries. The step keeps them when the slice is moved afterwards (`steps-2.prj`). A START set by its knob writes START alone.
 - Ids 9 and 14 to 22 are not known.
 
-**Playback of steps** (Confirmed, DJS-1000, measured in its renders, which are frame-exact): a trigger fades the sound it cuts off in a straight line over the 44 frames (1 ms) before it, and starts the new sound at full level at once, unless ATTACK is set (its shortest, 1, is 6 ms). Retrigger repeats replay the step's own range. HOLD and RELEASE are 6.25 ms a unit at 5 to 20; HOLD 40 is more than 500 ms. Velocity 32, 64, 100 and 127 play at −15.3, −6.9, −2.3 and 0 dB.
+**Playback of steps** (Confirmed, DJS-1000, measured in its renders, which are frame-exact): a trigger fades the sound it cuts off in a straight line over the 44 frames (1 ms) before it, and starts the new sound at full level at once, unless ATTACK is set (its shortest, 1, is 6 ms). Retrigger repeats replay the step's own range, each landing within a frame of its step time, and ATTACK applies again on each (`P03Slicer`, test stems). HOLD and RELEASE are 6.25 ms a unit at 5 to 20; HOLD 40 is more than 500 ms. Velocity 32, 64, 100 and 127 play at −15.3, −6.9, −2.3 and 0 dB.
 
 ## 6. Arrangement (SP-16 only)
 
