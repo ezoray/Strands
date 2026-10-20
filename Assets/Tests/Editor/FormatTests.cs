@@ -251,6 +251,98 @@ namespace Strands.Tests
             CollectionAssert.AreEqual(StepsBlob.CreateEmpty().ToInflated(), built.ToInflated());
         }
 
+        static StepsBlob StepsOf(string fixture, int pattern)
+        {
+            return StepsBlob.FromScalar(Fixtures.ReadProject(fixture).Child("SceneData0").Child("PatternData" + pattern).Scalar("Steps"));
+        }
+
+        // steps-1.prj was saved on the DJS-1000 with one setting on each beat of pattern 1, track 1,
+        // over a 4-bar sample sliced into 16 slices of 22050 frames. Beat n is step 4n - 3.
+        [Test]
+        public void S5_StepSettings_ReadAsTheUnitShowedThem()
+        {
+            StepsBlob steps = StepsOf("steps-1.prj", 0);
+            Func<int, StepParameter, int?> at = (beat, p) => steps.GetParameter(0, (beat - 1) * 4, p);
+
+            // Beat 2 plays slice 3: the slice's boundaries, not its number.
+            Assert.That(at(2, StepParameter.Start), Is.EqualTo(44100));
+            Assert.That(at(2, StepParameter.LoopStart), Is.EqualTo(44100));
+            Assert.That(at(2, StepParameter.Length), Is.EqualTo(22050));
+            Assert.That(at(3, StepParameter.Start), Is.EqualTo(220500));
+
+            Assert.That(at(4, StepParameter.Attack), Is.EqualTo(StepsBlob.KnobValue(5)));
+            Assert.That(at(5, StepParameter.Hold), Is.EqualTo(StepsBlob.KnobValue(99)));
+            Assert.That(at(6, StepParameter.Release), Is.EqualTo(StepsBlob.KnobValue(15)));
+            Assert.That(at(7, StepParameter.RetriggerCount), Is.EqualTo(2));
+            Assert.That(at(8, StepParameter.RetriggerCount), Is.EqualTo(4));
+            Assert.That(at(8, StepParameter.RetriggerSpeed), Is.EqualTo(4)); // 1/16
+            Assert.That(at(9, StepParameter.Offset), Is.EqualTo(21));
+            Assert.That(at(11, StepParameter.Pitch), Is.EqualTo(700));
+            Assert.That(at(12, StepParameter.Pitch), Is.EqualTo(-500));
+            Assert.That(at(16, StepParameter.Velocity), Is.EqualTo(91));
+            Assert.That(steps.GetParameter(0, 63, StepParameter.LfoSpeed), Is.EqualTo(StepsBlob.KnobValue(13)));
+
+            // START set by its knob leaves loop start and length to the track.
+            Assert.That(at(13, StepParameter.Start), Is.EqualTo(15180));
+            Assert.That(at(13, StepParameter.Length), Is.Null);
+            Assert.That(at(14, StepParameter.Length), Is.EqualTo(130198));
+            Assert.That(at(14, StepParameter.Start), Is.Null);
+
+            Assert.That(steps.GetTriggerKind(0, 0), Is.EqualTo(StepTrigger.Full));
+            Assert.That(steps.GetTriggerKind(0, 36), Is.EqualTo(StepTrigger.Half));
+            Assert.That(steps.GetTriggerKind(0, 40), Is.EqualTo(StepTrigger.Param));
+        }
+
+        [Test]
+        public void S5_StepSettings_WrittenByTheLibraryMatchTheUnitsBytes()
+        {
+            StepsBlob unit = StepsOf("steps-1.prj", 0);
+            // Beat 15 holds a setting of the insert effect, which the library does not write.
+            unit.ClearTrigger(0, 56);
+
+            StepsBlob built = StepsBlob.CreateEmpty();
+            Action<int, StepTrigger> trigger = (step, kind) => built.SetTrigger(0, step, kind);
+            int[] slice = { 0, 0, 44100, 220500, 220500, 220500, 220500, 0, 0, 0, 0, 0, 0 };
+            for (int beat = 1; beat <= 12; beat++)
+            {
+                int step = (beat - 1) * 4;
+                StepTrigger kind = beat == 10 ? StepTrigger.Half : beat == 11 ? StepTrigger.Param : StepTrigger.Full;
+                trigger(step, kind);
+                built.SetPlayRange(0, step, slice[beat], 22050);
+            }
+            built.SetParameter(0, 12, StepParameter.Attack, StepsBlob.KnobValue(5));
+            built.SetParameter(0, 16, StepParameter.Hold, StepsBlob.KnobValue(99));
+            built.SetParameter(0, 20, StepParameter.Release, StepsBlob.KnobValue(15));
+            built.SetParameter(0, 24, StepParameter.RetriggerCount, 2);
+            built.SetParameter(0, 28, StepParameter.RetriggerCount, 4);
+            built.SetParameter(0, 28, StepParameter.RetriggerSpeed, 4);
+            built.SetParameter(0, 32, StepParameter.Offset, 21);
+            built.SetParameter(0, 40, StepParameter.Pitch, 700);
+            built.SetParameter(0, 44, StepParameter.Pitch, -500);
+            trigger(48, StepTrigger.Full);
+            built.SetParameter(0, 48, StepParameter.Start, 15180);
+            trigger(52, StepTrigger.Full);
+            built.SetParameter(0, 52, StepParameter.Length, 130198);
+            trigger(60, StepTrigger.Full);
+            built.SetParameter(0, 60, StepParameter.Velocity, 91);
+            trigger(63, StepTrigger.Full);
+            built.SetParameter(0, 63, StepParameter.LfoSpeed, StepsBlob.KnobValue(13));
+
+            CollectionAssert.AreEqual(unit.ToInflated(), built.ToInflated());
+
+            built.ClearParameter(0, 63, StepParameter.LfoSpeed);
+            Assert.That(built.GetParameter(0, 63, StepParameter.LfoSpeed), Is.Null);
+        }
+
+        [Test]
+        public void S5_StepSettings_AStepKeepsItsStartWhenTheSliceIsMoved()
+        {
+            // steps-2.prj is steps-1 with slice 3's start moved from 44100 to 50182 after beat 2 was set to it.
+            Sp16Project moved = Sp16Project.FromPrj(Fixtures.Read("steps-2.prj"));
+            Assert.That(moved.GetSliceBoundaries(0, 0)[2], Is.EqualTo(50182));
+            Assert.That(StepsOf("steps-2.prj", 0).GetParameter(0, 4, StepParameter.Start), Is.EqualTo(44100));
+        }
+
         [Test]
         public void S5_Pattern_LengthIsTotalStepsAndScalarsAreInUnitOrder()
         {

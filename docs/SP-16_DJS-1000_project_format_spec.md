@@ -134,13 +134,38 @@ Inflates to 155,648 bytes: 1,024 records of 152 bytes. Record index = **pad × 6
 | --- | --- | --- |
 | 0 | int32 | pad number (0-based); `-127` for an unused record |
 | 4 | int32 | step number (0-based); `-126` for an unused record |
-| 8 | int32 | constant 15 |
+| 8 | int32 | trigger kind: 15 Full, 11 Half, 8 Param (15 in an unused record) |
 | 12 | 35 × 4 bytes | table of parameter entries |
 
 - Default entries are `(id, 0x00, 0x80, 0x3f)`: ids 0 to 22, then ids 5 to 10, then ids 5 to 10 again. Building an unused record from this description reproduces the unit's default byte for byte.
 - To place a trigger, write the pad and step into the first two ints of the record at pad × 64 + step. Every other byte stays at its default. (Confirmed, SP-16.)
 - Entry id 13 holds the step volume. Setting 50 changed that entry to `(13, 50, 0, 0)`.
-- The meaning of the other entries is Unverified.
+- **Trigger kind** (Confirmed, file: `steps-1.prj`, saved on the DJS-1000): Full restarts the sample, its envelope and the step's settings; Half the envelope and settings only; Param the settings only. Half and Param alone make no sound (Confirmed, DJS-1000 render).
+
+**Step settings** (Confirmed, file: `steps-1.prj` and `steps-2.prj`, one setting per step with the screen values noted; Confirmed, DJS-1000: a package whose settings Strands wrote showed and played as meant).
+
+An entry is its id in byte 0 and a **22-bit signed value** in bytes 1 to 3 (−500 is `0c fe 3f`). `00 80 3f` in bytes 1 to 3 means the step leaves the setting to the track. Among the first 23 entries the id is the entry's place:
+
+| Id | Setting | Value |
+| --- | --- | --- |
+| 0 | PITCH | cents (+7 is 700) |
+| 1 | START | frames |
+| 2 | LOOP START | frames |
+| 3 | LENGTH | frames |
+| 4 | VELOCITY | 0 to 127 |
+| 5, 6, 7 | ATTACK, HOLD, RELEASE | knob |
+| 8 | LFO SPEED | knob |
+| 10 | OFFSET | 1/48 of a step, ±48 |
+| 11 | RETRIGGER CNT | triggers in all |
+| 12 | RETRIGGER SPD | place in the list 1/64, 1/32T, 1/32, 1/16T, 1/16, 1/8T, 1/8, 1/4T, 1/4 |
+| 13 | step volume | 0 to 127 |
+
+- A **knob** of 0 to 127 is stored as `floor(knob × 2^21 / 127)`. With the envelope's SYNC on, HOLD is on another scale, not mapped.
+- The last twelve entries are the six settings of FX1 and of FX2. A set one carries another id: FX1's first setting (the multi-mode filter's cutoff) was written as id 41, its value as the fraction of 2^21.
+- **Choosing a slice** for a step writes START, LOOP START and LENGTH as the slice's boundaries. The step keeps them when the slice is moved afterwards (`steps-2.prj`). A START set by its knob writes START alone.
+- Ids 9 and 14 to 22 are not known.
+
+**Playback of steps** (Confirmed, DJS-1000, measured in its renders, which are frame-exact): a trigger fades the sound it cuts off in a straight line over the 44 frames (1 ms) before it, and starts the new sound at full level at once, unless ATTACK is set (its shortest, 1, is 6 ms). Retrigger repeats replay the step's own range. HOLD and RELEASE are 6.25 ms a unit at 5 to 20; HOLD 40 is more than 500 ms. Velocity 32, 64, 100 and 127 play at −15.3, −6.9, −2.3 and 0 dB.
 
 ## 6. Arrangement (SP-16 only)
 
@@ -263,7 +288,7 @@ Every unit-saved file should parse with all bytes consumed and re-emit the infla
 - Whether the sequencer honours a bpm with more than one decimal place (the file stores a float32; the unit displays one decimal).
 - Byte 3 of the section record, always 0 so far.
 - The `bar` field in the `.dat`.
-- The meaning of the step parameter entries other than volume, and the packing of `patternQuantizeUnit` and `padQuantizeUnit`.
+- Step entries 9 and 14 to 22, the times of ATTACK, HOLD and RELEASE above 20, HOLD with SYNC on, and the packing of `patternQuantizeUnit` and `padQuantizeUnit`.
 - How scene changes are quantized during arrangement playback.
 - Why loading a project over a large one that is already loaded locks the unit up, and how large either has to be (section 10). The limit itself and what happens above it are answered there.
 - What the unit plays when a stereo sample is sent to a single output: one side, or both added.

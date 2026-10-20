@@ -2,20 +2,22 @@
 
 Differences between `SP-16_DJS-1000_project_format_spec.md` and the fixtures, decisions taken while building, and the unverified behaviour the code relies on. Evidence labels follow the spec: **Confirmed (file)**, **Confirmed (SP-16)**, **Reported**, **Unverified**.
 
-Last updated 2026-10-11.
+Last updated 2026-10-20.
 
 ## 1. Fixtures
 
-In `Fixtures/` (29 files):
+In `Fixtures/` (32 files):
 
 | Files | Source |
 | --- | --- |
 | `arr0.prj`, `arr0-one-section.prj`, `arr2` to `arr13` (15 files) | SP-16 |
 | `route1.prj`, `route2.prj` | SP-16 |
+| `stretch-modes.prj` | SP-16, saved by the user on 2026-10-12 from the empty project with track 1 on RESMPL and track 2 on M.TMP |
 | `velocity.prj` | SP-16, saved by the user on 2026-10-16: a Strands package (`U14Short`) loaded, velocity turned on for tracks 1 and 2 of scene 1, saved as `velocity` |
 | `route3-mono-8ch.prj` | SP-16, saved by the user on 2026-10-10 as `mono-tracks`: scene 1 in 8ch mode, tracks 1 to 8 on outputs 1 to 8 one at a time |
 | `slice-count-8.prj`, `slice-point-moved.prj`, `slice-two-points-moved.prj` | SP-16, one 81415-frame kick on pad 1 (saved as `slice2-8-slices`, `slice3-2nd-9300`, `slice4-2nd-12985-end`) |
 | `04.prj`, `05.prj`, `08.prj` | DJS-1000 through Project Creator |
+| `steps-1.prj`, `steps-2.prj` | DJS-1000 through Project Creator, saved by the user on 2026-10-20 as `P01Steps1` and `P01Steps2`: a Strands package (`P01Steps`, a 4-bar tone rising a semitone a beat, 16 slices of 22050 frames on track 1) with one step setting on each beat of pattern 1 and a shuffle of slices in pattern 2. steps-2 is the same with the envelope's SYNC on, hold set again on beat 5, and slice 3's start moved to 50182 |
 | `baked_example.prj`, `empty.tpkg` | loader page. The audio of `Sub_1shot.wav` in `empty.tpkg` was replaced on 2026-10-15 with a generated 50 Hz one-shot of the same length, so that no third-party sound is published; its header, its tags and the zip around it are as the loader wrote them, but for the two CRCs |
 | `stems_test.tpkg` | generated, loaded on the DJS-1000 |
 | `rev1.tpkg` | generated, loaded and played on the SP-16 |
@@ -145,4 +147,13 @@ These are about reading audio, not about the SP-16 format.
 - **Stems in the app and stem files (2026-10-10).** The Source screen became four output strips and a Traktor stem file loads on a Mac. Nothing made that way has been on the SP-16 as such; the packages are the same bytes as the command line's from the four WAVs of the test song, which has. Still open: stem files on Windows, and how to find the right one among Traktor's (its files are named by a code and carry no title).
 - **Stems on the master output (2026-10-11).** Built at the user's asking, in the core and as a switch on the Source screen. `out/Master112.tpkg` is the test song's four stems as four tracks on master: 10 patterns in 3 scenes, 51.2 MB. The app's export of it and the command line's (`ExportStems` with `"master,master,master,master"` and stems kept apart) are the same bytes. Waiting for the user to try it on the unit.
 - **What counts as a silent sample, and silent patterns at the end (2026-10-13).** A stem's sample is left out when nothing in it comes within 54 dB of the stem's loudest sample, as before, and now also when it is faint throughout (30 dB or more under that peak) with an average level 50 dB or more under it: the click and bleed a separator leaves where an instrument is not playing. Measured on separated stems of a commercial song and the test stems: the samples this adds are at -32/-58, -32/-66, -49/-78 and -35/-54 (loudest/average); the quietest kept is -24/-51. The figures are Claude's, from those two songs. Silence is judged up to where the next chunk starts, not over the tail a sample plays on under the next, and a sample that follows a left-out one starts at full level with no fade in. Patterns at the end of a song that are silent in every layer are dropped, for one file as for stems. Since 2026-10-18 that silence is the stricter one, 54 dB under the peak: with the looser test a fade dying away from 34 dB under its peak was dropped, 3.7 s of a song's end (the user: "the tail of the song is being cut off"). The looser test still leaves out a stem's samples inside the song. Unverified on the unit: nothing made with these has been loaded.
-- The spec's own open questions (section 13) are all still open.
+- **Step settings (2026-10-20).** Read from `steps-1.prj` and `steps-2.prj` (Confirmed, file; tests `S5_StepSettings_*`), then measured in the DJS-1000's own renders of `P01Steps` and of `P02Steps`, a package whose step settings Strands wrote (renders are frame-exact and at the sample's own level, so they measure the unit to the frame). Everything Strands wrote showed on the unit as meant and played as meant (Confirmed, DJS-1000).
+  - A record's third int is the trigger kind: Full 15, Half 11, Param 8. Half and Param alone make no sound: they act on a voice already playing.
+  - The 35 entries are an id in one byte and a 22-bit signed value in three; a setting left to the track holds 00 80 3f. Ids: 0 pitch in cents, 1 START, 2 LOOP START, 3 LENGTH (frames), 4 velocity, 5 attack, 6 hold, 7 release, 8 LFO speed, 10 offset, 11 retrigger count, 12 retrigger speed, 13 step volume; FX1's first setting is written in the 24th entry with id 41. Knobs of 0 to 127 are `floor(knob * 2^21 / 127)`. With the envelope's SYNC on, hold is on another scale (31 is stored as 0.858 of 2^21), not mapped.
+  - Choosing a slice on a step writes START, LOOP START and LENGTH as the slice's boundaries, and the step keeps them when the slice is moved later. So a step can play any stretch of a sample.
+  - **A new trigger fades the sound it cuts off in a straight line over the 44 frames before it** (1 ms), retriggers included. **The new sound starts at full level at once**, so the click at a jump is the sample's level at the new start. Moving that start to the quietest frame within 1 ms took the click away on the tone (28 and 8 frames); attack does too but its shortest is 6 ms (attack 1 to 5: 6, 11, 17.5, 22.6, 30 ms of linear rise).
+  - Offset is in 1/48 of a step. Retrigger count includes the first trigger; the speeds by place are 1/64, 1/32T, 1/32, 1/16T, 1/16, 1/8T, 1/8, 1/4T (gaps of 1/4, 1/3, 1/2, 2/3, 1, 4/3, 2 and 8/3 steps), then 1/4 (on the unit's list, not rendered); the track's default is 1/32. Each repeat replays the step's own START and LENGTH.
+  - Velocity 32, 64, 91, 100, 127 play at -15.3, -6.9, -3.3, -2.3 and 0 dB. Hold and release are 6.25 ms a unit at 5, 10 and 20 (release a straight fade), but hold 40 lasted past a beat (500 ms), so the scale steepens above that; not mapped.
+  - Pitch -5 played at 164.8 Hz with stretch Off: slower, as resampling.
+  - Not tried: positions past 2^21 - 1 frames (47.5 s), where the value field ends; the SP-16 (the format is shared, the playback was heard only on the DJS-1000).
+- The spec's own open questions (section 13) are all still open, but for the meaning of the step entries.
